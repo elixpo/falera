@@ -130,13 +130,17 @@ export default function BoardViewer() {
         createElement("model-viewer", {
           ref,
           src: MODEL,
-          alt: "3D model of the Falera badge PCB: black solder mask, white silkscreen. Drag to turn it, scroll or pinch to zoom.",
+          alt: "3D model of the Falera badge: black PCB with the 2.8 inch display module, a printed name card and the lanyard. Drag to turn it, scroll or pinch to zoom.",
           "camera-controls": "",
           "touch-action": "pan-y",
           "interaction-prompt": "none",
           "disable-pan": "",
           ...(reducedMotion ? {} : { "auto-rotate": "", "auto-rotate-delay": "0", "rotation-per-second": "14deg" }),
           "camera-orbit": `-25deg 55deg ${narrow ? "0.36m" : "0.26m"}`,
+          // Turn about the badge's own centre (board x 84 mm, y 96.8 mm in
+          // the GLB's KiCad coordinates), not the middle of the bounding box,
+          // which the lanyard straps stretch towards the top.
+          "camera-target": "0.084m 0.0017m 0.0968m",
           "min-camera-orbit": "auto auto 0.12m",
           "max-camera-orbit": "auto auto 0.6m",
           "field-of-view": "30deg",

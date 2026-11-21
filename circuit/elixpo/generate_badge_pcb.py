@@ -84,6 +84,14 @@ def module_xy(u, v):
 # the long edges, 44.00 mm apart across and 78.08 mm apart along.
 HEADER_PIN1 = module_xy(8.49, 86.0 - 2.0)
 MODULE_HOLES = tuple(module_xy(u, v) for v in (3.0, 3.0 + 78.08) for u in (3.0, 47.0))
+# The module's 3D model (3d/make_msp2807_model.py) hangs on J3, the header
+# socket: its origin is header pin 1, and its back face stands on the 11 mm
+# standoffs.
+MODULE_MODEL = "${KIPRJMOD}/3d/MSP2807.step"
+MODULE_STANDOFF = 11.0
+# The buttons are SHOU HAN TS665CJ, 5.0 mm tall to the top of the plunger;
+# KiCad's SW_PUSH_6mm model is 4.3 mm, so it is stretched to match.
+BUTTON_MODEL_Z = 5.0 / 4.3
 
 
 # ---------------------------------------------------------------- netlist
@@ -836,7 +844,14 @@ def main():
                 pad.SetDrillSize(pcbnew.VECTOR2I(mm(0.3), mm(0.3)))
         x, y, rot, side = PLACE[ref]
         place(fp, x, y, rot, side)
+        if ref == "J3":
+            model = pcbnew.FP_3DMODEL()
+            model.m_Filename = MODULE_MODEL
+            model.m_Offset = pcbnew.VECTOR3D(0, 0, MODULE_STANDOFF)
+            fp.Models().push_back(model)
         if comp["footprint"].startswith("Button_Switch_THT:"):
+            for model in fp.Models():
+                model.m_Scale = pcbnew.VECTOR3D(1, 1, round(BUTTON_MODEL_Z, 4))
             # The library puts the origin on pin 1; PLACE gives the switch's centre.
             xs = [pcbnew.ToMM(pad.GetPosition().x) - ORIGIN[0] for pad in fp.Pads()]
             ys = [pcbnew.ToMM(pad.GetPosition().y) - ORIGIN[1] for pad in fp.Pads()]

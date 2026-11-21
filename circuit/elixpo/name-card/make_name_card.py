@@ -82,8 +82,8 @@ def slot_paths():
     return out
 
 
-def rect(box, cls, label=None):
-    (xa, xb), (ya, yb) = box
+def rect(b, cls, label=None):
+    (xa, xb), (ya, yb) = b
     x0, y0 = c(xa, ya)
     x1, y1 = c(xb, yb)
     s = f'<rect class="{cls}" x="{x0}" y="{y0}" width="{x1 - x0:.3f}" height="{y1 - y0:.3f}" rx="0.4"/>'
@@ -92,36 +92,121 @@ def rect(box, cls, label=None):
     return s
 
 
+def box(b, clear=0.0):
+    """A board-coordinate box → card (x0, y0, x1, y1), optionally grown."""
+    (xa, xb), (ya, yb) = b
+    x0, y0 = c(xa, ya)
+    x1, y1 = c(xb, yb)
+    return x0 - clear, y0 - clear, x1 + clear, y1 + clear
+
+
+def hdim(x0, x1, y, label, above=True):
+    """Horizontal dimension line with end ticks and a centred label."""
+    t = -0.8 if above else 2.0
+    return (f'<g class="dl"><line x1="{x0:.3f}" y1="{y:.3f}" x2="{x1:.3f}" y2="{y:.3f}"/>'
+            f'<line x1="{x0:.3f}" y1="{y - 0.9:.3f}" x2="{x0:.3f}" y2="{y + 0.9:.3f}"/>'
+            f'<line x1="{x1:.3f}" y1="{y - 0.9:.3f}" x2="{x1:.3f}" y2="{y + 0.9:.3f}"/></g>'
+            f'<text class="dt" x="{(x0 + x1) / 2:.3f}" y="{y + t:.3f}">{label}</text>')
+
+
+def vdim(y0, y1, x, label, left=True):
+    """Vertical dimension line with end ticks and a rotated label."""
+    tx = x - 0.8 if left else x + 0.8
+    my = (y0 + y1) / 2
+    return (f'<g class="dl"><line x1="{x:.3f}" y1="{y0:.3f}" x2="{x:.3f}" y2="{y1:.3f}"/>'
+            f'<line x1="{x - 0.9:.3f}" y1="{y0:.3f}" x2="{x + 0.9:.3f}" y2="{y0:.3f}"/>'
+            f'<line x1="{x - 0.9:.3f}" y1="{y1:.3f}" x2="{x + 0.9:.3f}" y2="{y1:.3f}"/></g>'
+            f'<text class="dt" x="{tx:.3f}" y="{my:.3f}" transform="rotate(-90 {tx:.3f} {my:.3f})">{label}</text>')
+
+
+def features():
+    """Every cut-out and guide in card millimetres: (name, x0, y0, x1, y1, note)."""
+    outline, (nx0, ny0, ny1) = card_outline()
+    rows = [("Card", 0.0, 0.0, BOARD_W, CARD_H, "cut line; top corners r 3.0")]
+    for name, sl in zip(("Lanyard slot, left", "Lanyard slot, right"), SLOTS):
+        x0, y0, x1, y1 = box(sl, CLEAR)
+        rows.append((name, x0, y0, x1, y1, f"cut; round ends r {(y1 - y0) / 2:.2f}"))
+    rows.append(("IR notch (rx + tx)", nx0, ny0, BOARD_W, ny1, f"cut, open to the right edge; inner corners r {INNER_R}"))
+    rows.append(("IR receiver U8 (body)", *box(U8_IR_RECEIVER), "inside the notch"))
+    rows.append(("IR LED D10", *box(D10_IR_LED), "inside the notch"))
+    rows.append(("Speaker grille G1", *box(SPEAKER_GRILLE), "covered by the card; keep artwork light"))
+    for name, led in zip(("Corner LED D1", "Corner LED D2"), CORNER_LEDS):
+        rows.append((name, *box(led), "covered; light shows through paper"))
+    sx1 = c(SPEAKER_GRILLE[0][0], 0)[0] - CLEAR - 2
+    sy0 = c(0, SLOTS[0][1][1])[1] + CLEAR + 2
+    rows.append(("Artwork safe area", 2.0, sy0, sx1, CARD_H - 2, "keep text and faces inside"))
+    return rows
+
+
 def build(guides=True):
     outline, (nx0, ny0, ny1) = card_outline()
     w, h = BOARD_W, CARD_H
     style = """
     .cut   { fill: #ffffff; stroke: #c93a45; stroke-width: 0.25; }
-    .hole  { fill: #ffffff; stroke: #c93a45; stroke-width: 0.25; }
     .guide { fill: none; stroke: #1d2420; stroke-width: 0.15; stroke-dasharray: 0.8 0.6; opacity: 0.55; }
     .safe  { fill: none; stroke: #2e7d5b; stroke-width: 0.15; stroke-dasharray: 0.4 0.4; }
-    .lab   { font: 1.6px Arial, sans-serif; fill: #1d2420; opacity: 0.7; text-anchor: middle; dominant-baseline: middle; }
-    .dim   { font: 1.8px Arial, sans-serif; fill: #c93a45; text-anchor: middle; }
+    .lab   { font: 1.3px Arial, sans-serif; fill: #1d2420; text-anchor: middle; dominant-baseline: middle; }
+    .dl line { stroke: #1d4fa0; stroke-width: 0.12; }
+    .dt    { font: 1.15px Arial, sans-serif; fill: #1d4fa0; text-anchor: middle; }
+    .th    { font: bold 1.5px Arial, sans-serif; fill: #1d2420; }
+    .td    { font: 1.3px Arial, sans-serif; fill: #1d2420; }
+    .tn    { font: 1.15px Arial, sans-serif; fill: #6b756f; }
     """
     body = [f'<path class="cut" fill-rule="evenodd" d="{outline} {" ".join(slot_paths())}"/>']
+    extra_h = 0
     if guides:
-        # 2 mm safe area inside the card and around the cut-outs.
-        body.append(f'<rect class="safe" x="2" y="{c(0, SLOTS[0][1][1])[1] + CLEAR + 2:.2f}" '
-                    f'width="{c(SPEAKER_GRILLE[0][0], 0)[0] - CLEAR - 4:.2f}" height="{h - (c(0, SLOTS[0][1][1])[1] + CLEAR + 2) - 2:.2f}"/>')
-        body.append(rect(U8_IR_RECEIVER, "guide", "IR rx"))
-        body.append(rect(D10_IR_LED, "guide", "IR tx"))
-        body.append(rect(SPEAKER_GRILLE, "guide", "speaker grille"))
-        for i, led in enumerate(CORNER_LEDS, 1):
-            body.append(rect(led, "guide"))
-        # The LCD's top edge and the board outline below the card.
+        rows = features()
+        sa = rows[-1]
+        body.append(f'<rect class="safe" x="{sa[1]:.2f}" y="{sa[2]:.2f}" width="{sa[3] - sa[1]:.2f}" height="{sa[4] - sa[2]:.2f}"/>')
+        for r in rows[4:9]:
+            body.append(f'<rect class="guide" x="{r[1]:.3f}" y="{r[2]:.3f}" width="{r[3] - r[1]:.3f}" height="{r[4] - r[2]:.3f}" rx="0.3"/>')
+        # Feature labels with their size, inside or beside each one.
+        body.append(f'<text class="lab" x="{(rows[6][1] + rows[6][3]) / 2:.2f}" y="{rows[6][2] + 3.2:.2f}">speaker grille</text>')
+        body.append(f'<text class="lab" x="{(rows[6][1] + rows[6][3]) / 2:.2f}" y="{rows[6][2] + 5:.2f}">13.5 × 10.8</text>')
+        body.append(f'<text class="lab" x="{(rows[4][1] + rows[4][3]) / 2:.2f}" y="{rows[4][2] + 2.6:.2f}">IR rx</text>')
+        body.append(f'<text class="lab" x="{(rows[4][1] + rows[4][3]) / 2:.2f}" y="{rows[4][2] + 4.2:.2f}">5.4 × 7.5</text>')
+        body.append(f'<text class="lab" x="{(rows[5][1] + rows[5][3]) / 2:.2f}" y="{rows[5][2] - 2.4:.2f}">IR tx</text>')
+        body.append(f'<text class="lab" x="{(rows[5][1] + rows[5][3]) / 2:.2f}" y="{rows[5][2] - 1.0:.2f}">4.7 × 2.3</text>')
+        body.append(f'<text class="lab" x="{(sa[1] + sa[3]) / 2:.2f}" y="{(sa[2] + sa[4]) / 2:.2f}">artwork safe area  {sa[3] - sa[1]:.1f} × {sa[4] - sa[2]:.1f}</text>')
+        # Dimension lines.
+        body.append(hdim(0, w, -2.4, f"{w:.1f}"))
+        body.append(vdim(0, h, -2.4, f"{h:.1f}"))
+        ls, rs = rows[1], rows[2]
+        body.append(hdim(ls[1], ls[3], ls[2] - 0.9, f"{ls[3] - ls[1]:.1f}"))
+        body.append(hdim(0, ls[1], ls[4] + 1.4, f"{ls[1]:.1f}", above=False))
+        body.append(hdim(rs[1], rs[3], rs[2] - 0.9, f"{rs[3] - rs[1]:.1f}"))
+        body.append(hdim(rs[3], w, rs[4] + 1.4, f"{w - rs[3]:.1f}", above=False))
+        body.append(vdim(0, ls[2], ls[1] - 1.2, f"{ls[2]:.2f}"))
+        body.append(vdim(ls[2], ls[4], ls[3] + 1.4, f"{ls[4] - ls[2]:.1f}", left=False))
+        nt = rows[3]
+        body.append(hdim(nt[1], w, nt[4] + 2.0, f"notch {w - nt[1]:.2f}", above=False))
+        body.append(vdim(nt[2], nt[4], w + 2.4, f"{nt[4] - nt[2]:.2f}", left=False))
+        body.append(vdim(0, nt[2], w + 4.6, f"{nt[2]:.2f}", left=False))
+        body.append(vdim(nt[4], h, w + 2.4, f"{h - nt[4]:.2f}", left=False))
         body.append(f'<line class="guide" x1="0" y1="{LCD_TOP - BOARD_Y0}" x2="{w}" y2="{LCD_TOP - BOARD_Y0}"/>')
-        body.append(f'<text class="lab" x="{w / 2}" y="{LCD_TOP - BOARD_Y0 + 1.6}">top of the LCD module</text>')
-        body.append(f'<text class="dim" x="{w / 2}" y="-2">88.0 mm</text>')
-        body.append(f'<text class="dim" x="-2" y="{h / 2}" transform="rotate(-90 -2 {h / 2})">{h:.1f} mm</text>')
-    pad = 5 if guides else 0
-    vb = f"{-pad} {-pad} {w + 2 * pad} {h + 2 * pad + (3 if guides else 0)}"
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w + 2 * pad}mm" '
-            f'height="{h + 2 * pad + (3 if guides else 0)}mm" viewBox="{vb}">\n'
+        body.append(f'<text class="lab" x="{w / 2}" y="{LCD_TOP - BOARD_Y0 + 1.5}">top of the LCD module (60.0 below the board top)</text>')
+        # Dimension table under the drawing.
+        ty = h + 6
+        body.append(f'<text class="th" x="0" y="{ty}">All dimensions in mm, from the card\'s top-left corner (x right, y down). Cut-outs include 0.5 clearance.</text>')
+        cols = [0, 26, 37, 48, 59, 70, 79]
+        heads = ["Feature", "x", "y", "width", "height", "", "Note"]
+        ty += 3
+        for cx, hd in zip(cols, ["Feature", "x", "y", "width", "height"]):
+            body.append(f'<text class="th" x="{cx}" y="{ty}">{hd}</text>')
+        body.append(f'<text class="th" x="{cols[5]}" y="{ty}">Note</text>')
+        for r in rows:
+            ty += 2.3
+            name, x0, y0, x1, y1, note = r
+            vals = [name, f"{x0:.2f}", f"{y0:.2f}", f"{x1 - x0:.2f}", f"{y1 - y0:.2f}"]
+            for cx, v in zip(cols, vals):
+                body.append(f'<text class="td" x="{cx}" y="{ty}">{v}</text>')
+            body.append(f'<text class="tn" x="{cols[5]}" y="{ty}">{note}</text>')
+        extra_h = ty - h + 2
+    pad = 7 if guides else 0
+    H = h + 2 * pad + extra_h
+    vb = f"{-pad} {-pad} {w + 2 * pad + (3 if guides else 0)} {H}"
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w + 2 * pad + (3 if guides else 0)}mm" '
+            f'height="{H}mm" viewBox="{vb}">\n'
             f'<title>Falera Badge name card, 1:1 (mm)</title>\n<style>{style}</style>\n'
             + "\n".join(body) + "\n</svg>\n")
 

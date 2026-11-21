@@ -6,13 +6,15 @@ the band between the board's top edge and the top of the LCD module. It wraps
 around the IR receiver (U8) and the IR LED (D10) on the right edge, and stays
 clear of the two lanyard slots.
 
-Every number comes from circuit/elixpo/elixpo.kicad_pcb (KiCad 10, read with
+Every number comes from ../circuit/elixpo/elixpo.kicad_pcb (KiCad 10, read with
 pcbnew on 2026-11-22). Board coordinates are in mm, y pointing down; the
 card's origin (0, 0) is the board's top-left corner (board x 40, y 30).
 
-Writes, next to this script:
-  name-card.svg         1:1 in millimetres: cut line, cut-outs, guides
+Writes, into template/:
+  name-card.svg         1:1 in millimetres: cut line, cut-outs, guides, dimensions
   name-card-print.svg   the cut line and cut-outs only, for a print template
+  name-card-mask.svg    the card's shape as a filled mask (holes cut out), used
+                        by the HTML card designs in cards/ to clip the artwork
 
 Run: python3 make_name_card.py
 """
@@ -211,9 +213,20 @@ def build(guides=True):
             + "\n".join(body) + "\n</svg>\n")
 
 
+def mask():
+    """The card as one white shape with the cut-outs as holes, viewBox in mm."""
+    outline, _ = card_outline()
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {BOARD_W} {CARD_H}" '
+            f'width="{BOARD_W}mm" height="{CARD_H}mm" preserveAspectRatio="none">'
+            f'<path fill="#fff" fill-rule="evenodd" d="{outline} {" ".join(slot_paths())}"/></svg>\n')
+
+
 if __name__ == "__main__":
-    (HERE / "name-card.svg").write_text(build(guides=True))
-    (HERE / "name-card-print.svg").write_text(build(guides=False))
+    out = HERE / "template"
+    out.mkdir(exist_ok=True)
+    (out / "name-card.svg").write_text(build(guides=True))
+    (out / "name-card-print.svg").write_text(build(guides=False))
+    (out / "name-card-mask.svg").write_text(mask())
     _, (nx0, ny0, ny1) = card_outline()
     print(f"card {BOARD_W:.1f} x {CARD_H:.1f} mm; IR notch from x={nx0:.2f} to the right edge, "
           f"y={ny0:.2f}..{ny1:.2f} mm")

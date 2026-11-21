@@ -36,6 +36,12 @@ the owner's initials in a disc. Nothing is fetched or decoded here.
 Controls:
   A      refresh the GitHub card now
   HOME   apps drawer
+  up up down down left right left right B A
+         the Konami code, printed on every Falera name card: plays your
+         card's waveform on the speaker (oreoOS.konami) and draws it in
+         the GitHub area with a playhead; A or B stops it. Without a
+         GitHub user it says how to set one; without a speaker the
+         waveform still plays on screen, silently.
 """
 
 import time
@@ -44,12 +50,19 @@ import oreoOS
 from oreoOS import api, cache, github, pixelfont
 from oreoOS import theme, widgets
 
+try:
+    from oreoOS import konami           # the name card's easter egg
+except ImportError:                     # an OS without it: no egg, no harm
+    konami = None
+
 SW = api.SCREEN_W
 SH = api.SCREEN_H
 
 TITLE = "FALERA BADGE"
 HINT = "A=refresh  HOME=back"
 HINT_NO_USER = "HOME=back"
+HINT_KONAMI = "A/B=stop  HOME=back"
+KONAMI_NOTE_MS = 6000                   # the "no GitHub user" note, if untouched
 
 # ── layout (pixels) ──────────────────────────────────────────────────────
 CARD_X = 8
@@ -332,9 +345,19 @@ class App(oreoOS.App):
         if self._auto and auto_fetch_ok():
             self._refresh(quiet=True)
         self._update_age()
+        # The Konami code: None, "play" (the waveform, with self._tune) or
+        # "nouser" (how to set GITHUB_USER).
+        self._code = konami.Detector() if konami is not None else None
+        self._kmode = None
+        self._tune = None
+        self._kvals = None
+        self._kpeak = -1
+        self._khead = -1
+        self._kshown_ms = 0
         self._dirty = True
 
     def on_exit(self):
+        self._end_konami()
         # A running fetch finishes on its own and writes the cache; the
         # next open picks the result up from flash.
         self._job = None
@@ -372,8 +395,60 @@ class App(oreoOS.App):
             self._dirty = True
 
     def on_button_press(self, btn):
+        if self._kmode == "nouser":
+            self._end_konami()          # any button puts the card back
+            return
+        if self._kmode == "play" and btn in (api.BTN_A, api.BTN_B):
+            self._end_konami()
+            return
+        if self._code is not None and self._code.feed(btn):
+            self._start_konami()        # the final A doesn't also refresh
+            return
         if btn == api.BTN_A:
             self._refresh()
+            self._dirty = True
+
+    # ── the Konami code ──────────────────────────────────────────────────
+    def _start_konami(self):
+        self._end_konami()
+        self._dirty = True
+        if not self._user:
+            self._kmode = "nouser"
+            self._kshown_ms = time.ticks_ms()
+            return
+        self._kvals = konami.wave(self._user)
+        self._kpeak = konami.peak(self._kvals)
+        audio = getattr(self._os, "audio", None)
+        self._tune = konami.Tune(audio, konami.notes(self._user))
+        self._tune.start()
+        self._khead = self._tune.playhead()
+        self._kmode = "play"
+
+    def _end_konami(self):
+        tune = getattr(self, "_tune", None)
+        if tune is not None:
+            tune.stop()
+        self._tune = None
+        self._kvals = None
+        if getattr(self, "_kmode", None) is not None:
+            self._kmode = None
+            self._dirty = True
+
+    def _update_konami(self):
+        if self._kmode == "nouser":
+            if time.ticks_diff(time.ticks_ms(), self._kshown_ms) >= KONAMI_NOTE_MS:
+                self._end_konami()
+            return
+        tune = self._tune
+        if tune is None:
+            return
+        tune.update()
+        if tune.done:
+            self._end_konami()
+            return
+        head = tune.playhead()
+        if head != self._khead:
+            self._khead = head
             self._dirty = True
 
     def update(self, dt):
@@ -394,6 +469,8 @@ class App(oreoOS.App):
                     self._note = "sync failed"
                 self._dirty = True
         self._update_age()
+        if self._kmode is not None:
+            self._update_konami()
 
     # ── fonts and layout ─────────────────────────────────────────────────
     def _font(self, name):
@@ -483,10 +560,17 @@ class App(oreoOS.App):
         self._dirty = False
         d.clear(theme.BG)
         widgets.draw_header(d, TITLE)
-        widgets.draw_hint(d, HINT if self._user else HINT_NO_USER)
+        if self._kmode == "play":
+            hint = HINT_KONAMI
+        else:
+            hint = HINT if self._user else HINT_NO_USER
+        widgets.draw_hint(d, hint)
         self._draw_card(d)
         if not (self._user or self._name):
-            self._draw_setup(d)
+            if self._kmode == "nouser":
+                self._draw_konami_nouser(d)
+            else:
+                self._draw_setup(d)
             return
         if self._layout is None:
             self._build_layout()
@@ -494,7 +578,11 @@ class App(oreoOS.App):
         for f, text, y, col in self._layout:
             f.text(d, text, TX, y, col)
         self._draw_divider(d)
-        if not self._user:
+        if self._kmode == "nouser":
+            self._draw_konami_nouser(d)
+        elif self._kmode == "play":
+            self._draw_konami(d)
+        elif not self._user:
             self._draw_no_user(d)
         elif self._profile is None:
             self._draw_not_synced(d)
@@ -616,6 +704,50 @@ class App(oreoOS.App):
             ("falera setup --set GITHUB_USER=you", theme.TEXT_DIM),
             ("See docs/PROFILE.md.", theme.MUTED),
         ))
+
+    def _draw_konami_nouser(self, d):
+        self._draw_note_box(d, (
+            ("Konami code!", theme.PRIMARY),
+            ("Set your GitHub user to hear", theme.TEXT_BRIGHT),
+            ("your name card's waveform:", theme.TEXT_BRIGHT),
+            ("falera setup --set GITHUB_USER=you", theme.TEXT_DIM),
+        ))
+
+    def _draw_konami(self, d):
+        """The card's 64 bars in the GitHub area, a playhead walking them:
+        bars already played are bright, the one sounding is red, the rest
+        dim; the card's red bars (the peak) stay red once reached."""
+        top = DIV_Y + 6
+        bottom = CARD_Y + CARD_H - 6
+        _round_rect(d, IN_X, top, IN_W, bottom - top, 4, theme.DOCK_SEL)
+        label = _cut("KONAMI  @" + self._user, _MONO1, IN_W - 12)
+        d.text(label, IN_X + 6, top + 5, theme.PRIMARY)
+        if self._tune is not None and self._tune.silent:
+            tag = "no speaker"
+            d.text(tag, IN_R - 6 - _MONO1.measure(tag), top + 5, theme.MUTED)
+        vals = self._kvals or ()
+        n = len(vals)
+        if not n:
+            return
+        bx0 = IN_X + 6
+        bw_all = IN_W - 12
+        step = bw_all // n                  # whole pixels: every bar the same
+        bw = max(1, step - 1)
+        bx0 += (bw_all - step * n) // 2
+        y0 = top + 18
+        bh_max = bottom - 5 - y0
+        mid = y0 + bh_max // 2
+        head = self._khead
+        for k, v in enumerate(vals):
+            h = max(2, int((0.15 + 0.85 * v) * bh_max))
+            hot = abs(k - self._kpeak) <= 1
+            if k == head:
+                col = theme.PRIMARY
+            elif head >= 0 and k < head:
+                col = theme.PRIMARY if hot else theme.TEXT_BRIGHT
+            else:
+                col = theme.MUTED
+            d.rect(bx0 + k * step, mid - h // 2, bw, h, col, fill=True)
 
     def _draw_status(self, d):
         """Sync pill / age label in the card's top-right corner."""

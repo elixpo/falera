@@ -3,15 +3,33 @@
 The Falera Badge lanyard: a 12 mm strap through both lanyard slots, printed on
 one side in the name card's ink and red.
 
-![The lanyard on the badge](renders/preview.png)
+![The four themes on the badge](renders/previews.png)
+
+## Themes
+
+The strap matches the card: a faint ground from the Elixpo palette
+(`falera.elixpo/src/app/globals.css`), with the card's ink (#1f2328) text, red
+(#c93a45) bow, wave peaks, edge stripes and folded ends.
+
+| Theme | Strap | From |
+| --- | --- | --- |
+| `paper` | #fbfbf8 | the site's paper |
+| `butter` | #fbf3d6 | a faint yellow |
+| `blush` | #fbe9ea | the red, faint (the site's red tint) |
+| `bamboo` | #e5f0e8 | the green, faint (the site's green tint) |
+
+Add or change a theme in `THEMES`
+in `make_lanyard.py`.
+
+![110–330 mm of each theme](renders/themes.png)
 
 | File | What |
 | --- | --- |
-| `lanyard-print.svg` | the artwork, 950 × 12 mm, for the printer |
+| `lanyard-print-<theme>.svg` | the artwork, 950 × 12 mm, for the printer |
+| `renders/lanyard-print-<theme>.pdf` | the same as a PDF at 950 × 12 mm (fonts embedded) |
+| `renders/preview-<theme>.png` | the lanyard on the badge, with Ayushman's card |
+| `renders/themes.png`, `renders/previews.png` | all the themes, side by side |
 | `lanyard-guides.svg` | the artwork with the fold, sew and centre lines marked |
-| `renders/lanyard-print.pdf` | the artwork as a PDF at 950 × 12 mm (fonts embedded) |
-| `renders/detail.png` | the first 330 mm, enlarged |
-| `renders/preview.png` | the lanyard on the badge, with Ayushman's card |
 | `make_lanyard.py` | regenerates all of these |
 
 Run `python3 make_lanyard.py` (needs a headless Chromium, as for

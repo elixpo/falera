@@ -9,11 +9,15 @@ The pattern repeats along the strap and turns 180 degrees at the middle, so
 when the lanyard is worn both sides read the same way, from the badge up.
 
 Writes:
-    lanyard-print.svg          the artwork alone, 950 x 12 mm (for the printer)
-    lanyard-guides.svg         the artwork with the fold, sew and centre lines
-    renders/lanyard-print.pdf  the artwork as a PDF at 950 x 12 mm
-    renders/detail.png         the first 330 mm, enlarged, in three rows
-    renders/preview.png        the lanyard on the badge
+    lanyard-print-<theme>.svg          the artwork, 950 x 12 mm (for the printer)
+    renders/lanyard-print-<theme>.pdf  the same as a PDF at 950 x 12 mm
+    renders/preview-<theme>.png        the lanyard on the badge
+    renders/themes.png                 110-330 mm of every theme, stacked
+    renders/previews.png               every preview side by side
+    lanyard-guides.svg                 the artwork with the fold, sew and centre lines
+
+Themes (THEMES below): faint grounds from the Elixpo palette, paper, butter
+(yellow), blush (red) and bamboo (green), all in the card's ink and red.
 
 Run: python3 make_lanyard.py   (needs a headless Chromium, see
 name-card/make_cards.py, and pdftoppm for the badge picture in the preview)
@@ -21,6 +25,7 @@ name-card/make_cards.py, and pdftoppm for the badge picture in the preview)
 
 import base64
 import hashlib
+import io
 import subprocess
 import sys
 import tempfile
@@ -38,19 +43,38 @@ SEW = 12.0                      # sew line, this far from each end
 MID = L / 2
 SAFE = 1.2                      # keep artwork this far from the long edges
 
-INK, MUTED, RED, RED_DARK = "#1f2328", "#59636e", "#c93a45", "#a92f39"
+# Colour themes: strap (bg), text, quiet text, accent (wave peaks, edge
+# stripes, "by Elixpo"), bow and its knot, the folded ends, Lumi's lines.
+CARD = dict(ink="#1f2328", muted="#59636e", accent="#c93a45", bow="#c93a45",
+            knot="#a92f39", ends="#c93a45", lumi="#1f2328")
+# Faint grounds from the Elixpo palette (falera.elixpo globals.css), so the
+# strap matches the card: the card's ink and red on every one.
+THEMES = {
+    "paper":  dict(CARD, bg="#fbfbf8"),                  # site paper
+    "butter": dict(CARD, bg="#fbf3d6"),                  # faint yellow
+    "blush":  dict(CARD, bg="#fbe9ea"),                  # the red, faint
+    "bamboo": dict(CARD, bg="#e5f0e8", muted="#5f6962"),  # the green, faint
+}
 MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace'
 
-BOW = ('<path d="M18 12C12 3 3 1 2 7c-1 5-1 10 1 13 3 3 10-1 15-8z" fill="{r}"/>'
-       '<path d="M22 12c6-9 15-11 16-5 1 5 1 10-1 13-3 3-10-1-15-8z" fill="{r}"/>'
-       '<rect x="15.5" y="7" width="9" height="10" rx="3.5" fill="{d}"/>').format(r=RED, d=RED_DARK)
+
+def bow(t):
+    return ('<path d="M18 12C12 3 3 1 2 7c-1 5-1 10 1 13 3 3 10-1 15-8z" fill="{r}"/>'
+            '<path d="M22 12c6-9 15-11 16-5 1 5 1 10-1 13-3 3-10-1-15-8z" fill="{r}"/>'
+            '<rect x="15.5" y="7" width="9" height="10" rx="3.5" fill="{d}"/>').format(r=t["bow"], d=t["knot"])
 
 
-def lumi_href():
-    # Lumi facing the viewer (circuit/elixpo/art/lumi-front-lineart.png, lines
-    # thickened, in the card's ink), turned so she stands upright when worn.
-    data = (HERE / "assets" / "lumi-front.png").read_bytes()
-    return "data:image/png;base64," + base64.b64encode(data).decode()
+def lumi_href(colour):
+    """Lumi facing the viewer (circuit/elixpo/art/lumi-front-lineart.png, lines
+    thickened), turned so she stands upright when worn, in the theme's colour."""
+    from PIL import Image
+    im = Image.open(HERE / "assets" / "lumi-front.png").convert("RGBA")
+    rgb = tuple(int(colour[i:i + 2], 16) for i in (1, 3, 5))
+    tinted = Image.new("RGBA", im.size, rgb + (0,))
+    tinted.putalpha(im.getchannel("A"))
+    buf = io.BytesIO()
+    tinted.save(buf, "PNG", optimize=True)
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
 def brand_wave(n):
@@ -69,7 +93,8 @@ class Wave:
     waveform pieces read as one band broken by the text."""
     PITCH, BAR, H = 0.9, 0.5, 7.4
 
-    def __init__(self):
+    def __init__(self, t):
+        self.t = t
         self.vals = brand_wave(4000)
         self.i = 0
 
@@ -81,7 +106,7 @@ class Wave:
         out = []
         for k, v in enumerate(vals):
             h = max(0.6, (0.18 + 0.82 * v) * self.H)
-            col = RED if abs(k - peak) <= 1 else INK
+            col = self.t["accent"] if abs(k - peak) <= 1 else self.t["ink"]
             out.append(f'<rect x="{x + k * self.PITCH:.2f}" y="{WID / 2 - h / 2:.2f}" width="{self.BAR}" '
                        f'height="{h:.2f}" rx="{self.BAR / 2}" fill="{col}"/>')
         return "".join(out)
@@ -95,20 +120,20 @@ def text(x, s, size, weight, fill, length, spacing=True):
             f'fill="{fill}" textLength="{length}" lengthAdjust="{adj}">{s}</text>')
 
 
-def module(x, wave, lumi):
+def module(x, wave, lumi, t):
     """One 150 mm repeat, starting at x. Widths in mm."""
     parts = []
-    parts.append(f'<g transform="translate({x:.2f} {WID / 2 - 3.6:.2f}) scale(0.3)">{BOW}</g>')   # bow, 12 x 7.2
+    parts.append(f'<g transform="translate({x:.2f} {WID / 2 - 3.6:.2f}) scale(0.3)">{bow(t)}</g>')   # bow, 12 x 7.2
     x += 12 + 4
-    parts.append(text(x, "FALERA BADGE", 3.9, 800, INK, 34))
+    parts.append(text(x, "FALERA BADGE", 3.9, 800, t["ink"], 34))
     x += 34 + 5
     parts.append(wave.draw(x, 22))
     x += 22 + 5
     parts.append(f'<image href="{lumi}" x="{x + 0.6:.2f}" y="{WID / 2 - 4.7:.2f}" width="8.3" height="9.4"/>')   # 1443 x 1635 px
     x += 9.5 + 4
-    parts.append(text(x, "falera.elixpo.com", 3.1, 600, MUTED, 27))
+    parts.append(text(x, "falera.elixpo.com", 3.1, 600, t["muted"], 27))
     x += 27 + 3
-    parts.append(text(x, "by Elixpo", 2.6, 700, RED, 13))
+    parts.append(text(x, "by Elixpo", 2.6, 700, t["accent"], 13))
     return "".join(parts)
 
 
@@ -117,7 +142,7 @@ MIN_GAP = 5.0
 CENTRE = 24.0                   # kept clear at the neck for the centre bow alone
 
 
-def half(lumi, wave):
+def half(lumi, wave, t):
     """The artwork from the sewn end to the middle, in strap coordinates."""
     parts = []
     usable = MID - END - CENTRE / 2                   # stop short of the centre bow
@@ -125,24 +150,25 @@ def half(lumi, wave):
     gap = (usable - count * MODULE_W) / count        # spread the spare length evenly
     x = END + gap / 2
     for _ in range(count):
-        parts.append(module(x, wave, lumi))
+        parts.append(module(x, wave, lumi, t))
         x += MODULE_W + gap
     return "".join(parts)
 
 
-def artwork(guides=False):
-    lumi = lumi_href()
-    first = half(lumi, Wave())
+def artwork(theme="paper", guides=False):
+    t = THEMES[theme]
+    lumi = lumi_href(t["lumi"])
+    first = half(lumi, Wave(t), t)
     # The second half is the first turned 180 degrees about the strap's centre.
-    body = [f'<rect width="{L}" height="{WID}" fill="#fff"/>']
+    body = [f'<rect width="{L}" height="{WID}" fill="{t["bg"]}"/>']
     for y in (SAFE, WID - SAFE):
-        body.append(f'<line x1="0" y1="{y}" x2="{L}" y2="{y}" stroke="{RED}" stroke-width="0.35"/>')
-    body.append(f'<rect x="0" y="0" width="{END}" height="{WID}" fill="{RED}"/>')
-    body.append(f'<rect x="{L - END}" y="0" width="{END}" height="{WID}" fill="{RED}"/>')
+        body.append(f'<line x1="0" y1="{y}" x2="{L}" y2="{y}" stroke="{t["accent"]}" stroke-width="0.35"/>')
+    body.append(f'<rect x="0" y="0" width="{END}" height="{WID}" fill="{t["ends"]}"/>')
+    body.append(f'<rect x="{L - END}" y="0" width="{END}" height="{WID}" fill="{t["ends"]}"/>')
     body.append(first)
     body.append(f'<g transform="rotate(180 {MID} {WID / 2})">{first}</g>')
     # At the neck: one bow on the centre line.
-    body.append(f'<g transform="translate({MID - 6} {WID / 2 - 3.6}) scale(0.3)">{BOW}</g>')
+    body.append(f'<g transform="translate({MID - 6} {WID / 2 - 3.6}) scale(0.3)">{bow(t)}</g>')
     if guides:
         g = 'stroke="#0a7cff" stroke-width="0.2" fill="none"'
         for x in (END, L - END):
@@ -172,48 +198,63 @@ def main():
     exe = chrome()
     if not exe:
         sys.exit("no headless Chromium found: set CHROME to its path")
-    art = artwork()
-    (HERE / "lanyard-print.svg").write_text(art)
-    (HERE / "lanyard-guides.svg").write_text(artwork(guides=True))
+    (HERE / "lanyard-guides.svg").write_text(artwork("paper", guides=True))
     out = HERE / "renders"
     out.mkdir(exist_ok=True)
+    written = ["lanyard-guides.svg"]
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        # PDF at the strap's real size.
-        page = tmp / "print.html"
-        page.write_text(f'<!doctype html><style>@page {{ size: {L}mm {WID}mm; margin: 0 }} body {{ margin: 0 }} '
-                        f'svg {{ display: block }}</style>{art}')
-        run(exe, ["--no-pdf-header-footer", f"--print-to-pdf={out / 'lanyard-print.pdf'}", page.as_uri()])
-
-        # Detail: the first 330 mm in three rows of 110 mm, at 10 px/mm.
-        rows = "".join(
-            f'<div class="row"><svg viewBox="{k * 110} 0 110 {WID}" width="1100" height="120">{art[art.index(">") + 1:-6]}</svg>'
-            f'<span>{k * 110}–{(k + 1) * 110} mm</span></div>' for k in range(3))
-        det = tmp / "detail.html"
-        det.write_text('<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#eaeef2;font:13px sans-serif;color:#59636e;padding:20px}'
-                       '.row{margin-bottom:22px}.row svg{display:block;background:#fff;outline:1px solid #d1d9e0}'
-                       f'.row span{{display:block;margin-top:5px}}</style>{rows}')
-        run(exe, ["--window-size=1140,520", f"--screenshot={out / 'detail.png'}", det.as_uri()])
-
-        # Preview: the badge with the strap rising from both slots.
         card_pdf = tmp / "card.pdf"
         run(exe, ["--no-pdf-header-footer", f"--print-to-pdf={card_pdf}",
                   (ROOT / "name-card" / "cards" / "Circuit-Overtime.html").as_uri() + "?card"])
         subprocess.run(["pdftoppm", "-r", "300", "-png", "-singlefile", str(card_pdf), str(tmp / "card")], check=True)
-        strap_png = tmp / "strap.png"
-        strap = tmp / "strap.html"
-        strap.write_text(f'<!doctype html><style>body{{margin:0}} svg{{display:block}}</style>'
-                         f'<svg viewBox="0 0 {L} {WID}" width="{int(L * 4)}" height="{int(WID * 4)}">{art[art.index(">") + 1:-6]}</svg>')
-        run(exe, [f"--window-size={int(L * 4)},{int(WID * 4)}", f"--screenshot={strap_png}", strap.as_uri()])
-        prev = tmp / "preview.html"
-        prev.write_text(preview_html((tmp / "card.png").as_uri(), strap_png.as_uri()))
-        run(exe, ["--window-size=900,1200", f"--screenshot={out / 'preview.png'}", prev.as_uri()])
-    for f in ("lanyard-print.svg", "lanyard-guides.svg", "renders/lanyard-print.pdf", "renders/detail.png", "renders/preview.png"):
+        rows = []
+        for name in THEMES:
+            art = artwork(name)
+            inner = art[art.index(">") + 1:-6]
+            svg = HERE / f"lanyard-print-{name}.svg"
+            svg.write_text(art)
+            # PDF at the strap's real size.
+            page = tmp / f"print-{name}.html"
+            page.write_text(f'<!doctype html><style>@page {{ size: {L}mm {WID}mm; margin: 0 }} body {{ margin: 0 }} '
+                            f'svg {{ display: block }}</style>{art}')
+            run(exe, ["--no-pdf-header-footer", f"--print-to-pdf={out / f'lanyard-print-{name}.pdf'}", page.as_uri()])
+            # Preview: the badge with the strap rising from both slots.
+            strap_png = tmp / f"strap-{name}.png"
+            strap = tmp / f"strap-{name}.html"
+            strap.write_text(f'<!doctype html><style>body{{margin:0}} svg{{display:block}}</style>'
+                             f'<svg viewBox="0 0 {L} {WID}" width="{int(L * 4)}" height="{int(WID * 4)}">{inner}</svg>')
+            run(exe, [f"--window-size={int(L * 4)},{int(WID * 4)}", f"--screenshot={strap_png}", strap.as_uri()])
+            prev = tmp / f"preview-{name}.html"
+            prev.write_text(preview_html((tmp / "card.png").as_uri(), strap_png.as_uri(), name))
+            run(exe, ["--window-size=900,1200", f"--screenshot={out / f'preview-{name}.png'}", prev.as_uri()])
+            # One row of the themes overview: 110-330 mm, at 5 px/mm.
+            rows.append(f'<div class="row"><svg viewBox="110 0 220 {WID}" width="1100" height="60">{inner}</svg><span>{name}</span></div>')
+            written += [svg.name, f"renders/lanyard-print-{name}.pdf", f"renders/preview-{name}.png"]
+
+        det = tmp / "themes.html"
+        det.write_text('<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#eaeef2;font:13px sans-serif;color:#59636e;padding:20px}'
+                       '.row{margin-bottom:18px}.row svg{display:block;outline:1px solid #d1d9e0}'
+                       f'.row span{{display:block;margin-top:5px}}</style>{"".join(rows)}')
+        run(exe, ["--window-size=1140,{}".format(40 + 96 * len(THEMES)), f"--screenshot={out / 'themes.png'}", det.as_uri()])
+        written.append("renders/themes.png")
+        # All previews side by side.
+        from PIL import Image
+        ims = [Image.open(out / f"preview-{n}.png") for n in THEMES]
+        ims = [im.crop((150, 0, 750, 1160)) for im in ims]      # the badge and both straps
+        w, h = ims[0].size
+        gap = 48
+        sheet = Image.new("RGB", (w * len(ims) + gap * (len(ims) - 1), h), "#eaeef2")
+        for i, im in enumerate(ims):
+            sheet.paste(im, (i * (w + gap), 0))
+        sheet.save(out / "previews.png", optimize=True)
+        written.append("renders/previews.png")
+    for f in written:
         print(f)
 
 
-def preview_html(card, strap):
+def preview_html(card, strap, name):
     """The badge (black board, the card, the screen) with the strap from each
     slot, at 4 px/mm. The strap image starts at the sewn end, so it runs from
     the slot upwards; both sides read the same way, as worn."""
@@ -239,7 +280,7 @@ body {{ margin: 0; width: 900px; height: 1200px; background: #eaeef2; position: 
 </style>
 {"".join(straps)}
 <div class="board"></div><img class="card" src="{card}"><div class="lcd"><i></i></div>
-<p class="cap">Preview at 4 px/mm: 12 mm strap through both slots, ends folded and sewn.</p>"""
+<p class="cap">{name}: 12 mm strap through both slots, ends folded and sewn (4 px/mm).</p>"""
 
 
 if __name__ == "__main__":

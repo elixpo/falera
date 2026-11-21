@@ -15,6 +15,8 @@ Writes, into template/:
   name-card-print.svg   the cut line and cut-outs only, for a print template
   name-card-mask.svg    the card's shape as a filled mask (holes cut out), used
                         by the HTML card designs in cards/ to clip the artwork
+  name-card-cut.svg     the cut line with the fold-back tab, and the fold line
+                        (cards/ draw it for printing)
 
 Run: python3 make_name_card.py
 """
@@ -44,6 +46,13 @@ CORNER_LEDS = [((42.83, 44.38), (39.48, 42.52)), ((125.62, 127.17), (37.48, 40.5
 CLEAR = 0.5                 # clearance around every cut-out
 CARD_H = LCD_TOP - BOARD_Y0 - CLEAR   # stops 0.5 mm above the LCD module
 INNER_R = 1.0               # radius on the IR notch's inside corners
+# Fold-back tab under the bottom edge (1.5 cm of extra paper): folded back
+# along the dashed line, it props the card's lower end off the board, so the
+# card sits at an angle and the paper doesn't lie on the speaker grille. It
+# folds under the card, so the card's footprint doesn't change.
+TAB = 15.0                  # depth below the bottom edge: folded back, it sets the card's lift
+TAB_INSET = 2.0             # in from each side
+TAB_R = 1.0                 # its outer corners
 
 
 def c(x, y):
@@ -57,8 +66,9 @@ def stadium(x0, x1, y0, y1):
             f"H{x0 + r:.3f} A{r:.3f},{r:.3f} 0 0 1 {x0 + r:.3f},{y0:.3f} Z")
 
 
-def card_outline():
-    """The card's outer edge, with the IR notch cut from its right side.
+def card_outline(tab=False):
+    """The card's outer edge, with the IR notch cut from its right side, and
+    with tab=True the fold-back tab below the bottom edge.
 
     The notch covers U8 and D10 together: they sit 1.4 mm apart, too close
     for a strip of paper between them to survive."""
@@ -71,7 +81,9 @@ def card_outline():
         f"M{r},0 H{w - r} A{r},{r} 0 0 1 {w},{r} "
         f"V{ny0:.3f} H{nx0 + ir:.3f} A{ir},{ir} 0 0 0 {nx0:.3f},{ny0 + ir:.3f} "
         f"V{ny1 - ir:.3f} A{ir},{ir} 0 0 0 {nx0 + ir:.3f},{ny1:.3f} H{w} "
-        f"V{h} H0 V{r} A{r},{r} 0 0 1 {r},0 Z"
+        + (f"V{h} H{w - TAB_INSET} V{h + TAB - TAB_R} A{TAB_R},{TAB_R} 0 0 1 {w - TAB_INSET - TAB_R},{h + TAB} "
+           f"H{TAB_INSET + TAB_R} A{TAB_R},{TAB_R} 0 0 1 {TAB_INSET},{h + TAB - TAB_R} V{h} " if tab else f"V{h} ")
+        + f"H0 V{r} A{r},{r} 0 0 1 {r},0 Z"
     ), (nx0, ny0, ny1)
 
 
@@ -134,6 +146,8 @@ def features():
     rows.append(("Speaker grille G1", *box(SPEAKER_GRILLE), "covered by the card; keep artwork light"))
     for name, led in zip(("Corner LED D1", "Corner LED D2"), CORNER_LEDS):
         rows.append((name, *box(led), "covered; light shows through paper"))
+    rows.append(("Fold-back tab", TAB_INSET, CARD_H, BOARD_W - TAB_INSET, CARD_H + TAB,
+                 f"fold back on the dashed line: props the card up; corners r {TAB_R:g}"))
     sx1 = c(SPEAKER_GRILLE[0][0], 0)[0] - CLEAR - 2
     sy0 = c(0, SLOTS[0][1][1])[1] + CLEAR + 2
     rows.append(("Artwork safe area", 2.0, sy0, sx1, CARD_H - 2, "keep text and faces inside"))
@@ -145,6 +159,7 @@ def build(guides=True):
     w, h = BOARD_W, CARD_H
     style = """
     .cut   { fill: #ffffff; stroke: #c93a45; stroke-width: 0.25; }
+    .fold  { stroke: #c93a45; stroke-width: 0.2; stroke-dasharray: 1 0.7; }
     .guide { fill: none; stroke: #1d2420; stroke-width: 0.15; stroke-dasharray: 0.8 0.6; opacity: 0.55; }
     .safe  { fill: none; stroke: #2e7d5b; stroke-width: 0.15; stroke-dasharray: 0.4 0.4; }
     .lab   { font: 1.3px Arial, sans-serif; fill: #1d2420; text-anchor: middle; dominant-baseline: middle; }
@@ -154,7 +169,9 @@ def build(guides=True):
     .td    { font: 1.3px Arial, sans-serif; fill: #1d2420; }
     .tn    { font: 1.15px Arial, sans-serif; fill: #6b756f; }
     """
-    body = [f'<path class="cut" fill-rule="evenodd" d="{outline} {" ".join(slot_paths())}"/>']
+    tabbed, _ = card_outline(tab=True)
+    body = [f'<path class="cut" fill-rule="evenodd" d="{tabbed} {" ".join(slot_paths())}"/>',
+            f'<line class="fold" x1="{TAB_INSET}" y1="{h}" x2="{w - TAB_INSET}" y2="{h}"/>']
     extra_h = 0
     if guides:
         rows = features()
@@ -185,10 +202,12 @@ def build(guides=True):
         body.append(vdim(nt[2], nt[4], w + 2.4, f"{nt[4] - nt[2]:.2f}", left=False))
         body.append(vdim(0, nt[2], w + 4.6, f"{nt[2]:.2f}", left=False))
         body.append(vdim(nt[4], h, w + 2.4, f"{h - nt[4]:.2f}", left=False))
+        body.append(f'<text class="lab" x="{w / 2}" y="{h + TAB / 2}">fold back here (dashed): {TAB:g} mm of paper props the card up</text>')
+        body.append(vdim(h, h + TAB, -2.4, f"{TAB:g}"))
         body.append(f'<line class="guide" x1="0" y1="{LCD_TOP - BOARD_Y0}" x2="{w}" y2="{LCD_TOP - BOARD_Y0}"/>')
-        body.append(f'<text class="lab" x="{w / 2}" y="{LCD_TOP - BOARD_Y0 + 1.5}">top of the LCD module (60.0 below the board top)</text>')
+        body.append(f'<text class="lab" x="{w / 2}" y="{h + TAB + 1.8}">grey dashes at y 60.0: the LCD module\'s top edge, 0.5 below the card (the tab folds under the card)</text>')
         # Dimension table under the drawing.
-        ty = h + 6
+        ty = h + TAB + 6
         body.append(f'<text class="th" x="0" y="{ty}">All dimensions in mm, from the card\'s top-left corner (x right, y down). Cut-outs include 0.5 clearance.</text>')
         cols = [0, 26, 37, 48, 59, 70, 79]
         heads = ["Feature", "x", "y", "width", "height", "", "Note"]
@@ -205,12 +224,24 @@ def build(guides=True):
             body.append(f'<text class="tn" x="{cols[5]}" y="{ty}">{note}</text>')
         extra_h = ty - h + 2
     pad = 7 if guides else 0
+    if not guides:
+        extra_h = TAB
     H = h + 2 * pad + extra_h
     vb = f"{-pad} {-pad} {w + 2 * pad + (3 if guides else 0)} {H}"
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w + 2 * pad + (3 if guides else 0)}mm" '
             f'height="{H}mm" viewBox="{vb}">\n'
             f'<title>Falera Badge name card, 1:1 (mm)</title>\n<style>{style}</style>\n'
             + "\n".join(body) + "\n</svg>\n")
+
+
+def cutline():
+    """The cut line with the tab, and the fold line, viewBox in mm (for cards/)."""
+    tabbed, _ = card_outline(tab=True)
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {BOARD_W} {CARD_H + TAB}" '
+            f'width="{BOARD_W}mm" height="{CARD_H + TAB}mm">'
+            f'<path class="cut" fill="none" stroke="#000" stroke-width="0.2" fill-rule="evenodd" d="{tabbed} {" ".join(slot_paths())}"/>'
+            f'<line class="fold" x1="{TAB_INSET}" y1="{CARD_H}" x2="{BOARD_W - TAB_INSET}" y2="{CARD_H}" '
+            f'stroke="#000" stroke-width="0.2" stroke-dasharray="1 0.7"/></svg>\n')
 
 
 def mask():
@@ -227,6 +258,7 @@ if __name__ == "__main__":
     (out / "name-card.svg").write_text(build(guides=True))
     (out / "name-card-print.svg").write_text(build(guides=False))
     (out / "name-card-mask.svg").write_text(mask())
+    (out / "name-card-cut.svg").write_text(cutline())
     _, (nx0, ny0, ny1) = card_outline()
     print(f"card {BOARD_W:.1f} x {CARD_H:.1f} mm; IR notch from x={nx0:.2f} to the right edge, "
           f"y={ny0:.2f}..{ny1:.2f} mm")

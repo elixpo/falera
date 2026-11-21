@@ -43,7 +43,8 @@ template they are cut to.
 To add someone: put their photo in `assets/`, add them to `people.json`
 (optional: `photo_pos` sets the photo's CSS `object-position`, `theme` its ground), and run
 `python3 make_cards.py --render && python3 make_sheet.py`. Print `renders/sheet-N.pdf` at **100% / actual
-size** and cut along the grey lines.
+size**, cut along the grey lines (round the tab), and fold the tab back on the
+red dashes.
 
 ## Template
 
@@ -68,6 +69,14 @@ is 52.4 mm of height to the card's bottom edge.
   the IR receiver (U8) and the IR LED (D10) together: both must see out, and
   they sit too close for a strip of paper between them.
 
+**Fold-back tab:** 1.5 cm of extra paper below the bottom edge (x 2.0–86.0,
+15.0 deep, outer corners r 1.0), with a dashed fold line on the card's bottom
+edge. Cut round the tab and fold it back on the dashed line: it props the
+card's lower end off the board, so the card sits at an angle instead of lying
+flat on the speaker grille. It folds under the card, so it takes no room next
+to the LCD. `template/name-card-cut.svg` is the cut line with the tab, plus the
+fold line.
+
 **Covered by the card:** the speaker grille (G1) and the two amber corner LEDs
 (D1, D2). They are marked with their sizes so the artwork can allow for them.
 
@@ -89,6 +98,7 @@ check it against the board before cutting.
 | Speaker grille G1 | 71.40 | 9.10 | 13.50 | 10.80 | covered by the card |
 | Corner LED D1 | 2.83 | 9.48 | 1.55 | 3.04 | covered; light shows through paper |
 | Corner LED D2 | 85.62 | 7.48 | 1.55 | 3.04 | covered; light shows through paper |
+| Fold-back tab | 2.00 | 59.50 | 84.00 | 15.00 | fold back on the dashed line: props the card up; corners r 1 |
 | Artwork safe area | 2.00 | 9.65 | 66.90 | 47.85 | keep text and faces inside |
 
 Cut-outs include 0.5 mm clearance; the part rows are the parts' own outlines.

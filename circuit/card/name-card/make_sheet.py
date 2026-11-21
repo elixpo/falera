@@ -28,13 +28,13 @@ from pathlib import Path
 from pypdf import PageObject, PdfReader, PdfWriter, Transformation
 from pypdf.generic import DecodedStreamObject, NameObject
 
-from make_cards import H, HERE, W, chrome
+from make_cards import HERE, HT, W, chrome   # HT: the card with its fold-back tab
 
 PER_SHEET = 6
 A4_W, A4_H = 210.0, 297.0
 GAP_X, GAP_Y = 10.0, 14.0                   # space between cards, for cutting
 X0 = (A4_W - 2 * W - GAP_X) / 2              # top-left of the first card
-Y0 = (A4_H - 3 * H - 2 * GAP_Y) / 2
+Y0 = (A4_H - 3 * HT - 2 * GAP_Y) / 2
 MARK, MARK_OFF = 3.0, 1.5                    # crop mark length and gap from the corner
 PT = 72 / 25.4                               # points per millimetre
 
@@ -58,7 +58,7 @@ def crop_marks(x, y):
     """PDF drawing operators for the crop marks of a card at (x, y) mm from the
     sheet's top-left (PDF's origin is bottom-left, in points)."""
     ops = []
-    for cx, cy in ((x, y), (x + W, y), (x, y + H), (x + W, y + H)):
+    for cx, cy in ((x, y), (x + W, y), (x, y + HT), (x + W, y + HT)):
         sx = 1 if cx > x else -1
         sy = 1 if cy > y else -1
         for (ax, ay), (bx, by) in (
@@ -74,11 +74,11 @@ def build_sheet(writer, cards, blank):
     ops = ["0 G", f"{0.1 * PT:.3f} w"]
     for k in range(PER_SHEET):
         x = X0 + (k % 2) * (W + GAP_X)
-        y = Y0 + (k // 2) * (H + GAP_Y)
+        y = Y0 + (k // 2) * (HT + GAP_Y)
         src = cards[k] if k < len(cards) else blank
         sx = W * PT / float(src.mediabox.width)     # 1.0 when Chromium kept the size exactly
-        sy = H * PT / float(src.mediabox.height)
-        page.merge_transformed_page(src, Transformation().scale(sx, sy).translate(x * PT, (A4_H - y - H) * PT))
+        sy = HT * PT / float(src.mediabox.height)
+        page.merge_transformed_page(src, Transformation().scale(sx, sy).translate(x * PT, (A4_H - y - HT) * PT))
         ops += crop_marks(x, y)
     marks = DecodedStreamObject()
     marks.set_data("\n".join(ops).encode())

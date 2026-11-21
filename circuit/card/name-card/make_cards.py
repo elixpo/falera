@@ -38,6 +38,8 @@ import qrcode.image.svg
 
 HERE = Path(__file__).resolve().parent
 W, H = 88.0, 59.5
+from make_name_card import TAB, TAB_INSET   # the fold-back tab under the card  # noqa: E402
+HT = H + TAB                                # the card with its tab, as cut
 # Faint grounds from the Elixpo palette, as on the lanyard (card.css has the colours).
 THEMES = ("paper", "butter", "blush", "bamboo")
 
@@ -48,6 +50,12 @@ GITHUB_MARK = ('<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0
                '1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 '
                '2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 '
                '8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>')
+
+
+def cut_path():
+    """The cut line including the fold-back tab (template/name-card-cut.svg)."""
+    svg = (HERE / "template" / "name-card-cut.svg").read_text()
+    return re.search(r' d="([^"]+)"', svg).group(1)
 
 
 def card_path():
@@ -180,14 +188,15 @@ def konami():
 
 
 def card(p, path):
-    """One card's markup (the .card element)."""
+    """One card's markup: the card, its fold-back tab, and the cut and fold lines."""
     e = html.escape
     h = p["handle"]
     url = f"https://github.com/{h}"
     pos = f' style="object-position: {e(p["photo_pos"])}"' if p.get("photo_pos") else ""
     # A long handle doesn't fit after github.com/ on one line: break it.
     cap = f"github.com/{e(h)}" if len(h) <= 9 else f"github.com/<br>{e(h)}"
-    return f"""<div class="card theme-{e(p.get('theme', 'paper'))}">
+    return f"""<div class="unit theme-{e(p.get('theme', 'paper'))}">
+  <div class="card">
     {background(h)}
     <div class="top-label">FALERA BADGE</div>
     {ring(h)}
@@ -204,8 +213,11 @@ def card(p, path):
     <img class="lumi" src="../assets/lumi-line.png" alt="">
     <div class="foot"><img src="../assets/bow.svg" alt="">falera.elixpo.com</div>
     <div class="konami" title="Enter this on the badge to hear the waveform">{konami()}<b>B</b><b>A</b><span>♪</span></div>
-    <svg class="cutline" viewBox="0 0 {W} {H}" preserveAspectRatio="none" aria-hidden="true"><path fill-rule="evenodd" d="{path}"/></svg>
-  </div>"""
+  </div>
+  <div class="tab"><span>fold back on the dashed line</span></div>
+  <svg class="foldline" viewBox="0 0 {W} {HT}" aria-hidden="true"><line x1="{TAB_INSET}" y1="{H}" x2="{W - TAB_INSET}" y2="{H}"/></svg>
+  <svg class="cutline" viewBox="0 0 {W} {HT}" aria-hidden="true"><path fill-rule="evenodd" d="{cut_path()}"/></svg>
+</div>"""
 
 
 def clip_defs(path):
@@ -218,9 +230,9 @@ def clip_defs(path):
 
 
 def crop_marks(x0, y0):
-    """Crop marks just outside a card's four corners, card at (x0, y0) mm."""
+    """Crop marks just outside the corners of a card and its tab, at (x0, y0) mm."""
     out = []
-    for x, y in ((0, 0), (W, 0), (0, H), (W, H)):
+    for x, y in ((0, 0), (W, 0), (0, HT), (W, HT)):
         sx = 1 if x else -1
         sy = 1 if y else -1
         out.append(f'<span class="crop" style="left:{x0 + x + (1.5 if sx > 0 else -4.5):.2f}mm;top:{y0 + y - 0.05:.2f}mm;width:3mm;height:0.1mm"></span>')
@@ -254,7 +266,7 @@ Add <code>?cut</code> to the URL to see the cut line here.</p>
   if (q.includes("cut")) b.classList.add("show-cut");
   if (q.includes("card") || q.includes("blank")) {{
     b.classList.add("card-only");
-    document.head.insertAdjacentHTML("beforeend", "<style>@page {{ size: 88mm 59.5mm; margin: 0; }}</style>");
+    document.head.insertAdjacentHTML("beforeend", "<style>@page {{ size: {W:g}mm {HT:g}mm; margin: 0; }}</style>");
   }}
   if (q.includes("blank")) b.classList.add("blank");
 </script>

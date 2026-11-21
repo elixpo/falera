@@ -289,7 +289,7 @@ def preview_html(card, strap, name):
 body {{ margin: 0; width: 900px; height: 1200px; background: #eaeef2; position: relative; overflow: hidden; font: 13px sans-serif; }}
 .strap {{ position: absolute; width: {L * s}px; height: {WID * s}px; transform-origin: 0 0; }}
 .board {{ position: absolute; left: {bx}px; top: {by}px; width: {88 * s}px; height: {133.6 * s}px; background: #111316; border-radius: {3 * s}px {3 * s}px {2 * s}px {2 * s}px; }}
-.card {{ position: absolute; left: {bx}px; top: {by}px; width: {88 * s}px; height: {59.5 * s}px; }}
+.card {{ position: absolute; left: {bx}px; top: {by}px; width: {88 * s}px; height: {59.5 * s}px; object-fit: cover; object-position: top; }}  /* the fold-back tab is under the card */
 .lcd {{ position: absolute; left: {bx + 1 * s}px; top: {by + 60 * s}px; width: {86 * s}px; height: {50 * s}px; background: #b8322f; border-radius: 3px; }}
 .lcd i {{ position: absolute; left: {6 * s}px; top: {3.5 * s}px; right: {6 * s}px; bottom: {3.5 * s}px; background: #0d0f12; }}
 .cap {{ position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; color: #59636e; }}

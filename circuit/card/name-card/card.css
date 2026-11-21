@@ -62,10 +62,10 @@
 
 /* Themes: faint grounds from the Elixpo palette (falera.elixpo globals.css),
  * the same as the lanyard's; ink and red stay the card's. */
-.card.theme-paper  { --bg: #fbfbf8; }
-.card.theme-butter { --bg: #fbf3d6; }
-.card.theme-blush  { --bg: #fbe9ea; }
-.card.theme-bamboo { --bg: #e5f0e8; --muted: #5f6962; }
+.theme-paper  { --bg: #fbfbf8; }
+.theme-butter { --bg: #fbf3d6; }
+.theme-blush  { --bg: #fbe9ea; }
+.theme-bamboo { --bg: #e5f0e8; --muted: #5f6962; }
 
 /* Faint geometry behind everything. */
 .bg { left: 0; top: 0; width: 88mm; height: 59.5mm; }
@@ -117,7 +117,19 @@
 .konami span { margin-left: 0.7mm; color: var(--red); }
 
 /* The cut line, drawn over the card (hidden on screen unless .show-cut). */
-.cutline { left: 0; top: 0; width: 88mm; height: 59.5mm; pointer-events: none; display: none; }
+/* The card with its fold-back tab (15 mm, TAB in make_name_card.py; change
+ * the heights here with it): the tab folds back on the dashed line and props
+ * the card up. */
+.unit { position: relative; width: 88mm; height: 74.5mm; }
+.tab {
+  position: absolute; left: 2mm; top: 59.5mm; width: 84mm; height: 15mm;
+  background: var(--bg); border-radius: 0 0 1mm 1mm;
+  display: flex; align-items: center; justify-content: center;
+  font: 600 1.3mm/1 var(--mono); letter-spacing: 0.15mm; color: var(--muted);
+}
+.foldline { position: absolute; left: 0; top: 0; width: 88mm; height: 74.5mm; pointer-events: none; }
+.foldline line { stroke: var(--red); stroke-width: 0.2; stroke-dasharray: 1 0.7; }
+.cutline { position: absolute; left: 0; top: 0; width: 88mm; height: 74.5mm; pointer-events: none; display: none; }
 .cutline path { fill: none; stroke: #c93a45; stroke-width: 0.2; }
 
 /* ── Screen: preview, scaled up ─────────────────────────────────────── */
@@ -126,6 +138,7 @@
   body { background: #eaeef2; min-height: 100vh; display: grid; place-items: center; font-family: var(--sans); }
   .stage { transform: scale(2.8); transform-origin: center; }
   .stage .card { outline: 0.15mm solid #c9d1d9; }
+  .stage .tab { outline: 0.15mm solid #c9d1d9; }
   .show-cut .cutline { display: block; }
   .hint { position: fixed; bottom: 14px; left: 0; right: 0; text-align: center; color: #59636e; font-size: 13px; }
 }
@@ -146,6 +159,6 @@
 @media print {
   .card-only .stage { left: 0; top: 0; }
   .card-only .crop { display: none; }
-  .blank .card > :not(.cutline) { visibility: hidden; }
-  .blank .card { background: none; }        /* empty places: outline only, whatever the theme */
+  .blank .card, .blank .tab span { visibility: hidden; }   /* empty places: cut and fold lines only */
+  .blank .tab { background: none; }
 }

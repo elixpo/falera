@@ -176,6 +176,14 @@ this board.
   78.08 mm apart (H3 and H4 at x 122.08), so by the drawing the module's
   header-end holes sit 2 mm short of H3 and H4. The 3D model follows the
   drawing, so the renders show the offset.
+- UP (SW11) is hard to press: its plunger is 5.0 mm up, 11.6 mm below the
+  screen face, with its centre 3.9 mm from the module's edge under the
+  module's 6 mm overhang (11 mm standoffs). An adult fingertip only catches
+  it at an angle. Version 2 fixes it by making the board 10 mm longer,
+  added below the screen: the D-pad moves clear of the module, and the room
+  also takes the aux jack and the RTC and fuel gauge coming back. The card
+  template and the lanyard slots don't change, since the length goes below
+  the screen.
 - Confirm the selected LiPo capacity, protection board and maximum permitted
   charge current (#156).
 - Review the ESP32-S3 RF layout against Espressif's current hardware guide;

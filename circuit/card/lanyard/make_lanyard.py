@@ -11,9 +11,10 @@ when the lanyard is worn both sides read the same way, from the badge up.
 Writes:
     lanyard-print-<theme>.svg          the artwork, 950 x 12 mm (for the printer)
     renders/lanyard-print-<theme>.pdf  the same as a PDF at 950 x 12 mm
-    renders/preview-<theme>.png        the lanyard on the badge
+    renders/preview-<handle>.png       each person's card on the badge, with the
+                                       strap in their card's theme (people.json)
     renders/themes.png                 110-330 mm of every theme, stacked
-    renders/previews.png               every preview side by side
+    renders/previews.png               everyone side by side
     lanyard-guides.svg                 the artwork with the fold, sew and centre lines
 
 Themes (THEMES below): faint grounds from the Elixpo palette, paper, butter
@@ -26,6 +27,7 @@ name-card/make_cards.py, and pdftoppm for the badge picture in the preview)
 import base64
 import hashlib
 import io
+import json
 import subprocess
 import sys
 import tempfile
@@ -203,13 +205,12 @@ def main():
     out.mkdir(exist_ok=True)
     written = ["lanyard-guides.svg"]
 
+    # Each person's lanyard is in their card's theme (name-card/people.json).
+    people = json.loads((ROOT / "name-card" / "people.json").read_text())
+
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        card_pdf = tmp / "card.pdf"
-        run(exe, ["--no-pdf-header-footer", f"--print-to-pdf={card_pdf}",
-                  (ROOT / "name-card" / "cards" / "Circuit-Overtime.html").as_uri() + "?card"])
-        subprocess.run(["pdftoppm", "-r", "300", "-png", "-singlefile", str(card_pdf), str(tmp / "card")], check=True)
-        rows = []
+        rows, straps = [], {}
         for name in THEMES:
             art = artwork(name)
             inner = art[art.index(">") + 1:-6]
@@ -220,18 +221,15 @@ def main():
             page.write_text(f'<!doctype html><style>@page {{ size: {L}mm {WID}mm; margin: 0 }} body {{ margin: 0 }} '
                             f'svg {{ display: block }}</style>{art}')
             run(exe, ["--no-pdf-header-footer", f"--print-to-pdf={out / f'lanyard-print-{name}.pdf'}", page.as_uri()])
-            # Preview: the badge with the strap rising from both slots.
-            strap_png = tmp / f"strap-{name}.png"
+            # The strap as an image, for the previews.
+            straps[name] = tmp / f"strap-{name}.png"
             strap = tmp / f"strap-{name}.html"
             strap.write_text(f'<!doctype html><style>body{{margin:0}} svg{{display:block}}</style>'
                              f'<svg viewBox="0 0 {L} {WID}" width="{int(L * 4)}" height="{int(WID * 4)}">{inner}</svg>')
-            run(exe, [f"--window-size={int(L * 4)},{int(WID * 4)}", f"--screenshot={strap_png}", strap.as_uri()])
-            prev = tmp / f"preview-{name}.html"
-            prev.write_text(preview_html((tmp / "card.png").as_uri(), strap_png.as_uri(), name))
-            run(exe, ["--window-size=900,1200", f"--screenshot={out / f'preview-{name}.png'}", prev.as_uri()])
+            run(exe, [f"--window-size={int(L * 4)},{int(WID * 4)}", f"--screenshot={straps[name]}", strap.as_uri()])
             # One row of the themes overview: 110-330 mm, at 5 px/mm.
             rows.append(f'<div class="row"><svg viewBox="110 0 220 {WID}" width="1100" height="60">{inner}</svg><span>{name}</span></div>')
-            written += [svg.name, f"renders/lanyard-print-{name}.pdf", f"renders/preview-{name}.png"]
+            written += [svg.name, f"renders/lanyard-print-{name}.pdf"]
 
         det = tmp / "themes.html"
         det.write_text('<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#eaeef2;font:13px sans-serif;color:#59636e;padding:20px}'
@@ -239,17 +237,35 @@ def main():
                        f'.row span{{display:block;margin-top:5px}}</style>{"".join(rows)}')
         run(exe, ["--window-size=1140,{}".format(40 + 96 * len(THEMES)), f"--screenshot={out / 'themes.png'}", det.as_uri()])
         written.append("renders/themes.png")
-        # All previews side by side.
+
+        # Preview per person: their card on the badge, their theme's strap.
+        for p in people:
+            h, theme = p["handle"], p.get("theme", "paper")
+            card_pdf = tmp / f"card-{h}.pdf"
+            run(exe, ["--no-pdf-header-footer", f"--print-to-pdf={card_pdf}",
+                      (ROOT / "name-card" / "cards" / f"{h}.html").as_uri() + "?card"])
+            subprocess.run(["pdftoppm", "-r", "300", "-png", "-singlefile", str(card_pdf), str(tmp / f"card-{h}")], check=True)
+            prev = tmp / f"preview-{h}.html"
+            prev.write_text(preview_html((tmp / f"card-{h}.png").as_uri(), straps[theme].as_uri(), f"{p['name']}, {theme}"))
+            run(exe, ["--window-size=900,1200", f"--screenshot={out / f'preview-{h}.png'}", prev.as_uri()])
+            written.append(f"renders/preview-{h}.png")
+
+        # Everyone side by side.
         from PIL import Image
-        ims = [Image.open(out / f"preview-{n}.png") for n in THEMES]
-        ims = [im.crop((150, 0, 750, 1160)) for im in ims]      # the badge and both straps
-        w, h = ims[0].size
+        ims = [Image.open(out / f"preview-{p['handle']}.png").crop((150, 0, 750, 1200)) for p in people]
+        w, hgt = ims[0].size
         gap = 48
-        sheet = Image.new("RGB", (w * len(ims) + gap * (len(ims) - 1), h), "#eaeef2")
+        sheet = Image.new("RGB", (w * len(ims) + gap * (len(ims) - 1), hgt), "#eaeef2")
         for i, im in enumerate(ims):
             sheet.paste(im, (i * (w + gap), 0))
         sheet.save(out / "previews.png", optimize=True)
         written.append("renders/previews.png")
+
+        # What to order: straps per theme.
+        counts = {}
+        for p in people:
+            counts[p.get("theme", "paper")] = counts.get(p.get("theme", "paper"), 0) + 1
+        print("order: " + ", ".join(f"{n} x {c}" for n, c in counts.items()))
     for f in written:
         print(f)
 
@@ -280,7 +296,7 @@ body {{ margin: 0; width: 900px; height: 1200px; background: #eaeef2; position: 
 </style>
 {"".join(straps)}
 <div class="board"></div><img class="card" src="{card}"><div class="lcd"><i></i></div>
-<p class="cap">{name}: 12 mm strap through both slots, ends folded and sewn (4 px/mm).</p>"""
+<p class="cap">{name}</p>"""
 
 
 if __name__ == "__main__":

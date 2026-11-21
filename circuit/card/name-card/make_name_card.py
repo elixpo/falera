@@ -6,7 +6,7 @@ the band between the board's top edge and the top of the LCD module. It wraps
 around the IR receiver (U8) and the IR LED (D10) on the right edge, and stays
 clear of the two lanyard slots.
 
-Every number comes from ../circuit/elixpo/elixpo.kicad_pcb (KiCad 10, read with
+Every number comes from ../../elixpo/elixpo.kicad_pcb (KiCad 10, read with
 pcbnew on 2026-11-22). Board coordinates are in mm, y pointing down; the
 card's origin (0, 0) is the board's top-left corner (board x 40, y 30).
 

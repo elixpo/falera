@@ -3,7 +3,7 @@
 The Falera Badge lanyard: a 12 mm strap through both lanyard slots, printed on
 one side in the name card's ink and red.
 
-![The four themes on the badge](renders/previews.png)
+![Each person's card with the lanyard in its theme](renders/previews.png)
 
 ## Themes
 
@@ -18,7 +18,9 @@ The strap matches the card: a faint ground from the Elixpo palette
 | `blush` | #fbe9ea | the red, faint (the site's red tint) |
 | `bamboo` | #e5f0e8 | the green, faint (the site's green tint) |
 
-Add or change a theme in `THEMES`
+Each person's lanyard is in their card's theme (`"theme"` in
+`name-card/people.json`); `make_lanyard.py` prints how many straps of each
+theme to order. Add or change a theme in `THEMES`
 in `make_lanyard.py`.
 
 ![110–330 mm of each theme](renders/themes.png)
@@ -27,8 +29,9 @@ in `make_lanyard.py`.
 | --- | --- |
 | `lanyard-print-<theme>.svg` | the artwork, 950 × 12 mm, for the printer |
 | `renders/lanyard-print-<theme>.pdf` | the same as a PDF at 950 × 12 mm (fonts embedded) |
-| `renders/preview-<theme>.png` | the lanyard on the badge, with Ayushman's card |
-| `renders/themes.png`, `renders/previews.png` | all the themes, side by side |
+| `renders/preview-<handle>.png` | each person's card on the badge, with the lanyard in their card's theme |
+| `renders/themes.png` | all the themes, stacked |
+| `renders/previews.png` | everyone, side by side |
 | `lanyard-guides.svg` | the artwork with the fold, sew and centre lines marked |
 | `make_lanyard.py` | regenerates all of these |
 

@@ -192,6 +192,7 @@ DEPLOY = [
     ("oreoOS/usbhost.py",       "oreoOS/usbhost.py"),   # is a computer on USB?
     ("oreoOS/player.py",        "oreoOS/player.py"),    # MP3 streams (audio apps)
     ("oreoOS/mediaui.py",       "oreoOS/mediaui.py"),   # audio apps' shared screens
+    ("oreoOS/konami.py",        "oreoOS/konami.py"),    # the name card's easter egg (Badge)
 
     # Hardware drivers
     ("oreoWare/__init__.py",    "oreoWare/__init__.py"),

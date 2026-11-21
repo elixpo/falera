@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="98.0mm" height="72.5mm" viewBox="-5 -5 98.0 72.5">
+<title>Falera Badge name card, 1:1 (mm)</title>
+<style>
+    .cut   { fill: #ffffff; stroke: #c93a45; stroke-width: 0.25; }
+    .hole  { fill: #ffffff; stroke: #c93a45; stroke-width: 0.25; }
+    .guide { fill: none; stroke: #1d2420; stroke-width: 0.15; stroke-dasharray: 0.8 0.6; opacity: 0.55; }
+    .safe  { fill: none; stroke: #2e7d5b; stroke-width: 0.15; stroke-dasharray: 0.4 0.4; }
+    .lab   { font: 1.6px Arial, sans-serif; fill: #1d2420; opacity: 0.7; text-anchor: middle; dominant-baseline: middle; }
+    .dim   { font: 1.8px Arial, sans-serif; fill: #c93a45; text-anchor: middle; }
+    </style>
+<path class="cut" fill-rule="evenodd" d="M3.0,0 H85.0 A3.0,3.0 0 0 1 88.0,3.0 V19.800 H75.670 A1.0,1.0 0 0 0 74.670,20.800 V27.270 A1.0,1.0 0 0 0 75.670,28.270 H88.0 V59.5 H0 V3.0 A3.0,3.0 0 0 1 3.0,0 Z M4.850,3.350 H15.150 A2.150,2.150 0 0 1 15.150,7.650 H4.850 A2.150,2.150 0 0 1 4.850,3.350 Z M72.850,3.350 H83.150 A2.150,2.150 0 0 1 83.150,7.650 H72.850 A2.150,2.150 0 0 1 72.850,3.350 Z"/>
+<rect class="safe" x="2" y="9.65" width="66.90" height="47.85"/>
+<rect class="guide" x="82.25" y="20.3" width="5.440" height="7.470" rx="0.4"/><text class="lab" x="84.97" y="24.04">IR rx</text>
+<rect class="guide" x="75.17" y="23.83" width="4.660" height="2.340" rx="0.4"/><text class="lab" x="77.50" y="25.00">IR tx</text>
+<rect class="guide" x="71.4" y="9.1" width="13.500" height="10.800" rx="0.4"/><text class="lab" x="78.15" y="14.50">speaker grille</text>
+<rect class="guide" x="2.83" y="9.48" width="1.550" height="3.040" rx="0.4"/>
+<rect class="guide" x="85.62" y="7.48" width="1.550" height="3.040" rx="0.4"/>
+<line class="guide" x1="0" y1="60.0" x2="88.0" y2="60.0"/>
+<text class="lab" x="44.0" y="61.6">top of the LCD module</text>
+<text class="dim" x="44.0" y="-2">88.0 mm</text>
+<text class="dim" x="-2" y="29.75" transform="rotate(-90 -2 29.75)">59.5 mm</text>
+</svg>

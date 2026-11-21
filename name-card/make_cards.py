@@ -201,7 +201,7 @@ def page(p, path):
     <div class="wave-cap"><span>sha256(@{e(p['handle'])}) · {digest(p['handle']).hex()[:8]}</span><span>No. {p['no']:02d}</span></div>
     {qr_svg(url)}
     <div class="qr-cap">github.com/{e(p['handle'])}</div>
-    <img class="lumi" src="../assets/lumi-line.svg" alt="">
+    <img class="lumi" src="../assets/lumi-line.png" alt="">
     <div class="foot"><img src="../assets/bow.svg" alt="">falera.elixpo.com</div>
     <div class="konami" title="Enter this on the badge to hear the waveform">{konami()}<b>B</b><b>A</b><span>♪</span></div>
     <svg class="cutline" viewBox="0 0 {W} {H}" preserveAspectRatio="none" aria-hidden="true"><path fill-rule="evenodd" d="{path}"/></svg>

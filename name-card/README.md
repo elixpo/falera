@@ -10,7 +10,7 @@ template they are cut to.
 | `card.css` | the shared card style, in real millimetres |
 | `cards/` | the cards: open one in a browser to preview, print at 100% on A4 to cut |
 | `renders/` | a PNG preview and the A4 print PDF of each card |
-| `assets/` | photos, the bow, and Lumi's line art (`lumi-line.svg`) |
+| `assets/` | photos, the bow, and Lumi's line art (`lumi-line.png`, `circuit/elixpo/art/oreo-lineart.png` flipped) |
 | `template/` | the card's shape and every dimension (below) |
 | `make_name_card.py` | regenerates `template/` |
 
@@ -27,7 +27,7 @@ template they are cut to.
   centres, the GitHub mark in the middle, error correction Q. Level with the
   waveform (both 12 mm tall). Check it scans after any style change: rounded
   finders stopped it decoding.
-- **Lumi** in the top-right space, facing the viewer.
+- **Lumi** in the top-right space, looking left towards the name.
 - **The Konami code** (↑↑↓↓←→←→ B A ♪) as a hint: entered on the badge, it
   plays the owner's waveform as music, if a GitHub user is set.
 - Faint background geometry, also laid out from the hash.

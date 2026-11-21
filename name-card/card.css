@@ -97,7 +97,7 @@
 .foot img { width: 3.2mm; }
 
 /* Lumi in the top-right space, between the right lanyard slot and the IR notch. */
-.lumi { left: 72.6mm; top: 8.6mm; width: 12mm; }
+.lumi { left: 69.5mm; top: 5mm; width: 21mm; }   /* big: runs into the lanyard slot, the right edge and the IR notch, all cut away */
 
 /* Easter egg hint: the Konami code plays this card's waveform on the badge. */
 .konami {

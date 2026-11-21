@@ -8,13 +8,25 @@ template/name-card-mask.svg, which make_name_card.py writes).
 Open a card in a browser to preview it; print it at 100% on A4 for a
 real-size card with a cut line and crop marks.
 
-Run: python3 make_cards.py   (needs the qrcode package: pip install qrcode)
+make_sheet.py then lays the cards out six to an A4 sheet.
+
+Run:
+    python3 make_cards.py            # cards/*.html
+    python3 make_cards.py --render   # also renders/*.png, renders/*.pdf
+
+Needs the qrcode package (pip install qrcode). --render needs a headless
+Chromium: set CHROME to its path, or it looks for Playwright's headless shell,
+chromium and google-chrome.
 """
 
 import hashlib
 import html
 import json
+import os
 import re
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import qrcode
@@ -161,16 +173,58 @@ def konami():
     return "".join(out)
 
 
-def page(p, path):
+def card(p, path):
+    """One card's markup (the .card element)."""
     e = html.escape
-    url = f"https://github.com/{p['handle']}"
-    marks = []
-    # Crop marks at the card's four corners, printed outside the card (print only).
+    h = p["handle"]
+    url = f"https://github.com/{h}"
+    pos = f' style="object-position: {e(p["photo_pos"])}"' if p.get("photo_pos") else ""
+    # A long handle doesn't fit after github.com/ on one line: break it.
+    cap = f"github.com/{e(h)}" if len(h) <= 9 else f"github.com/<br>{e(h)}"
+    return f"""<div class="card">
+    {background(h)}
+    <div class="top-label">FALERA BADGE</div>
+    {ring(h)}
+    <img class="avatar" src="../{e(p['photo'])}" alt="{e(p['name'])}"{pos}>
+    <div class="who">
+      <div class="name">{e(p['name'])}</div>
+      <div class="handle">{GITHUB_MARK}@{e(h)}</div>
+      <div class="role">{e(p['role'])} <b>@{e(p['org'])}</b></div>
+    </div>
+    {wave(h)}
+    <div class="wave-cap"><span>sha256(@{e(h)}) · {digest(h).hex()[:8]}</span><span>No. {p['no']:02d}</span></div>
+    {qr_svg(url)}
+    <div class="qr-cap">{cap}</div>
+    <img class="lumi" src="../assets/lumi-line.png" alt="">
+    <div class="foot"><img src="../assets/bow.svg" alt="">falera.elixpo.com</div>
+    <div class="konami" title="Enter this on the badge to hear the waveform">{konami()}<b>B</b><b>A</b><span>♪</span></div>
+    <svg class="cutline" viewBox="0 0 {W} {H}" preserveAspectRatio="none" aria-hidden="true"><path fill-rule="evenodd" d="{path}"/></svg>
+  </div>"""
+
+
+def clip_defs(path):
+    return f"""<!-- Card shape in mm (from template/name-card-mask.svg), used as a clip path. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <clipPath id="card-shape" clipPathUnits="objectBoundingBox" transform="scale({1 / W:.8f} {1 / H:.8f})">
+    <path clip-rule="evenodd" d="{path}"/>
+  </clipPath>
+</svg>"""
+
+
+def crop_marks(x0, y0):
+    """Crop marks just outside a card's four corners, card at (x0, y0) mm."""
+    out = []
     for x, y in ((0, 0), (W, 0), (0, H), (W, H)):
-        sx = -1 if x == 0 else 1
-        sy = -1 if y == 0 else 1
-        marks.append(f'<span class="crop" style="left:{30 + x + (2 if sx > 0 else -6)}mm;top:{30 + y - 0.05}mm;width:4mm;height:0.1mm"></span>')
-        marks.append(f'<span class="crop" style="left:{30 + x - 0.05}mm;top:{30 + y + (2 if sy > 0 else -6)}mm;width:0.1mm;height:4mm"></span>')
+        sx = 1 if x else -1
+        sy = 1 if y else -1
+        out.append(f'<span class="crop" style="left:{x0 + x + (1.5 if sx > 0 else -4.5):.2f}mm;top:{y0 + y - 0.05:.2f}mm;width:3mm;height:0.1mm"></span>')
+        out.append(f'<span class="crop" style="left:{x0 + x - 0.05:.2f}mm;top:{y0 + y + (1.5 if sy > 0 else -4.5):.2f}mm;width:0.1mm;height:3mm"></span>')
+    return "".join(out)
+
+
+def page(p, path):
+    """A single card: a 2.8x preview on screen, real size on A4 when printed."""
+    e = html.escape
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -179,49 +233,67 @@ def page(p, path):
 <link rel="stylesheet" href="../card.css">
 </head>
 <body>
-<!-- Card shape in mm (from template/name-card-mask.svg), used as a clip path. -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <clipPath id="card-shape" clipPathUnits="objectBoundingBox" transform="scale({1 / W:.8f} {1 / H:.8f})">
-    <path clip-rule="evenodd" d="{path}"/>
-  </clipPath>
-</svg>
+{clip_defs(path)}
 
 <div class="stage">
-  <div class="card">
-    {background(p['handle'])}
-    <div class="top-label">FALERA BADGE</div>
-    {ring(p['handle'])}
-    <img class="avatar" src="../{e(p['photo'])}" alt="{e(p['name'])}">
-    <div class="who">
-      <div class="name">{e(p['name'])}</div>
-      <div class="handle">{GITHUB_MARK}@{e(p['handle'])}</div>
-      <div class="role">{e(p['role'])} <b>@{e(p['org'])}</b></div>
-    </div>
-    {wave(p['handle'])}
-    <div class="wave-cap"><span>sha256(@{e(p['handle'])}) · {digest(p['handle']).hex()[:8]}</span><span>No. {p['no']:02d}</span></div>
-    {qr_svg(url)}
-    <div class="qr-cap">github.com/{e(p['handle'])}</div>
-    <img class="lumi" src="../assets/lumi-line.png" alt="">
-    <div class="foot"><img src="../assets/bow.svg" alt="">falera.elixpo.com</div>
-    <div class="konami" title="Enter this on the badge to hear the waveform">{konami()}<b>B</b><b>A</b><span>♪</span></div>
-    <svg class="cutline" viewBox="0 0 {W} {H}" preserveAspectRatio="none" aria-hidden="true"><path fill-rule="evenodd" d="{path}"/></svg>
-  </div>
+  {card(p, path)}
 </div>
-{"".join(marks)}
+{crop_marks(30, 30)}
 <p class="hint">Preview at 2.8×. Print on A4 at 100% (no scaling) for a real-size card: cut along the grey line.
 Add <code>?cut</code> to the URL to see the cut line here.</p>
-<script>if (location.search.includes("cut")) document.body.classList.add("show-cut");</script>
+<script>
+  // ?cut shows the cut line on screen. For make_sheet.py: ?card prints one
+  // page exactly the card's size, and ?blank prints only the cut line.
+  const q = location.search, b = document.body;
+  if (q.includes("cut")) b.classList.add("show-cut");
+  if (q.includes("card") || q.includes("blank")) {{
+    b.classList.add("card-only");
+    document.head.insertAdjacentHTML("beforeend", "<style>@page {{ size: 88mm 59.5mm; margin: 0; }}</style>");
+  }}
+  if (q.includes("blank")) b.classList.add("blank");
+</script>
 </body>
 </html>
 """
 
 
+def chrome():
+    """A headless Chromium to render with, or None."""
+    if os.environ.get("CHROME"):
+        return os.environ["CHROME"]
+    found = sorted(Path.home().glob(".cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-*/chrome-headless-shell"))
+    if found:
+        return str(found[-1])
+    for name in ("chromium", "chromium-browser", "google-chrome", "chrome"):
+        if shutil.which(name):
+            return shutil.which(name)
+    return None
+
+
+def render(exe, page_file, png=None, pdf=None, size="1280,900"):
+    base = [exe, "--headless", "--no-sandbox", "--hide-scrollbars", "--allow-file-access-from-files"]
+    url = page_file.resolve().as_uri()
+    if png:
+        subprocess.run(base + [f"--window-size={size}", f"--screenshot={png}", url], capture_output=True, check=True)
+    if pdf:
+        subprocess.run(base + ["--no-pdf-header-footer", f"--print-to-pdf={pdf}", url], capture_output=True, check=True)
+
+
 if __name__ == "__main__":
     path = card_path()
-    out = HERE / "cards"
-    out.mkdir(exist_ok=True)
-    for i, p in enumerate(json.loads((HERE / "people.json").read_text()), 1):
+    people = json.loads((HERE / "people.json").read_text())
+    for i, p in enumerate(people, 1):
         p.setdefault("no", i)
-        f = out / f"{p['handle']}.html"
+    exe = chrome() if "--render" in sys.argv else None
+    if "--render" in sys.argv and not exe:
+        sys.exit("no headless Chromium found: set CHROME to its path")
+    (HERE / "renders").mkdir(exist_ok=True)
+
+    (HERE / "cards").mkdir(exist_ok=True)
+    for p in people:
+        f = HERE / "cards" / f"{p['handle']}.html"
         f.write_text(page(p, path))
-        print(f)
+        print(f.relative_to(HERE))
+        if exe:
+            render(exe, f, png=HERE / "renders" / f"{p['handle']}-preview.png",
+                   pdf=HERE / "renders" / f"{p['handle']}-print.pdf")

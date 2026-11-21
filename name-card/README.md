@@ -6,10 +6,11 @@ template they are cut to.
 | Path | What |
 | --- | --- |
 | `people.json` | who gets a card: GitHub handle, name, role, org, photo |
-| `make_cards.py` | builds `cards/<handle>.html` for everyone in `people.json` (needs `pip install qrcode`) |
+| `make_cards.py` | builds `cards/<handle>.html` for everyone in `people.json`; `--render` also writes each card's PNG and PDF (needs `pip install qrcode`, and a headless Chromium for `--render`) |
+| `make_sheet.py` | lays the cards in `cards/` out six to an A4 page, `renders/sheet-N.pdf` (vector, crop marks, spare places as empty outlines; needs `pip install pypdf`) |
 | `card.css` | the shared card style, in real millimetres |
-| `cards/` | the cards: open one in a browser to preview, print at 100% on A4 to cut |
-| `renders/` | a PNG preview and the A4 print PDF of each card |
+| `cards/` | one card per page: open in a browser to preview, print at 100% on A4 to cut |
+| `renders/` | each card's PNG preview and print PDF, and each sheet's PNG and PDF |
 | `assets/` | photos, the bow, and Lumi's line art (`lumi-line.png`, `circuit/elixpo/art/oreo-lineart.png` flipped) |
 | `template/` | the card's shape and every dimension (below) |
 | `make_name_card.py` | regenerates `template/` |
@@ -32,8 +33,10 @@ template they are cut to.
   plays the owner's waveform as music, if a GitHub user is set.
 - Faint background geometry, also laid out from the hash.
 
-To add someone: put their photo in `assets/`, add them to `people.json`, run
-`python3 make_cards.py`, and render as in `renders/`.
+To add someone: put their photo in `assets/`, add them to `people.json`
+(optional `photo_pos` sets the photo's CSS `object-position`), and run
+`python3 make_cards.py --render && python3 make_sheet.py`. Print `renders/sheet-N.pdf` at **100% / actual
+size** and cut along the grey lines.
 
 ## Template
 

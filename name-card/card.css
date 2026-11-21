@@ -34,7 +34,7 @@
 .card > * { position: absolute; }
 
 .top-label {
-  left: 17.3mm; width: 53.4mm; top: 4mm; text-align: center;
+  left: 17.3mm; width: 53.4mm; top: 5mm; text-align: center;
   font: 600 1.6mm/1 var(--mono); letter-spacing: 0.35mm; color: var(--muted);
 }
 
@@ -44,7 +44,8 @@
   border: 0.35mm solid #fff;
 }
 
-.who { left: 29mm; top: 13.2mm; width: 40mm; }
+/* Centred on the photo (top 14 + 18/2 = 23 mm), for one- or two-line names. */
+.who { left: 29mm; top: 23mm; width: 40mm; transform: translateY(-50%); }
 .who .name {
   font-size: 4.9mm; font-weight: 700; line-height: 1.08; letter-spacing: -0.1mm;
 }
@@ -53,6 +54,7 @@
   font: 400 2.75mm/1 var(--mono); color: var(--muted);
 }
 .who .handle svg { width: 2.9mm; height: 2.9mm; fill: var(--ink); flex: none; }
+.who .handle span {position: relative; top: 3px;}
 .who .role {
   margin-top: 2.6mm; font-size: 3.05mm; line-height: 1.2; color: var(--ink);
 }
@@ -86,7 +88,7 @@
 .qr .fi { fill: var(--red); }
 .qr g path { fill: var(--ink); }
 .qr-cap {
-  left: 69mm; top: 51.2mm; width: 19mm; text-align: center; white-space: nowrap;
+  left: 69mm; top: 51.2mm; width: 19mm; text-align: center; white-space: nowrap;  /* long handles break after github.com/ */
   font: 400 1.3mm/1.15 var(--mono); color: var(--muted);   /* on the caption line */
 }
 
@@ -96,8 +98,7 @@
 }
 .foot img { width: 3.2mm; }
 
-/* Lumi in the top-right space, between the right lanyard slot and the IR notch. */
-.lumi { left: 69.5mm; top: 5mm; width: 21mm; }   /* big: runs into the lanyard slot, the right edge and the IR notch, all cut away */
+.lumi { left: 69.5mm; top: 5mm; width: 21mm; transform: scale(1.5); filter: opacity(0.3); }   /* big: runs into the lanyard slot, the right edge and the IR notch, all cut away */
 
 /* Easter egg hint: the Konami code plays this card's waveform on the badge. */
 .konami {
@@ -132,4 +133,11 @@
   .cutline { display: block; }                /* …and cut along this line */
   .cutline path { stroke: #9aa4ad; stroke-width: 0.12; }
   .crop { position: absolute; background: #000; }
+}
+
+/* ── For make_sheet.py: the card alone on a card-sized page ────────────── */
+@media print {
+  .card-only .stage { left: 0; top: 0; }
+  .card-only .crop { display: none; }
+  .blank .card > :not(.cutline) { visibility: hidden; }
 }

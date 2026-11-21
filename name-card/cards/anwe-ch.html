@@ -34,9 +34,19 @@
     <svg class="cutline" viewBox="0 0 88.0 59.5" preserveAspectRatio="none" aria-hidden="true"><path fill-rule="evenodd" d="M3.0,0 H85.0 A3.0,3.0 0 0 1 88.0,3.0 V19.800 H75.670 A1.0,1.0 0 0 0 74.670,20.800 V27.270 A1.0,1.0 0 0 0 75.670,28.270 H88.0 V59.5 H0 V3.0 A3.0,3.0 0 0 1 3.0,0 Z M4.850,3.350 H15.150 A2.150,2.150 0 0 1 15.150,7.650 H4.850 A2.150,2.150 0 0 1 4.850,3.350 Z M72.850,3.350 H83.150 A2.150,2.150 0 0 1 83.150,7.650 H72.850 A2.150,2.150 0 0 1 72.850,3.350 Z"/></svg>
   </div>
 </div>
-<span class="crop" style="left:24mm;top:29.95mm;width:4mm;height:0.1mm"></span><span class="crop" style="left:29.95mm;top:24mm;width:0.1mm;height:4mm"></span><span class="crop" style="left:120.0mm;top:29.95mm;width:4mm;height:0.1mm"></span><span class="crop" style="left:117.95mm;top:24mm;width:0.1mm;height:4mm"></span><span class="crop" style="left:24mm;top:89.45mm;width:4mm;height:0.1mm"></span><span class="crop" style="left:29.95mm;top:91.5mm;width:0.1mm;height:4mm"></span><span class="crop" style="left:120.0mm;top:89.45mm;width:4mm;height:0.1mm"></span><span class="crop" style="left:117.95mm;top:91.5mm;width:0.1mm;height:4mm"></span>
+<span class="crop" style="left:25.50mm;top:29.95mm;width:3mm;height:0.1mm"></span><span class="crop" style="left:29.95mm;top:25.50mm;width:0.1mm;height:3mm"></span><span class="crop" style="left:119.50mm;top:29.95mm;width:3mm;height:0.1mm"></span><span class="crop" style="left:117.95mm;top:25.50mm;width:0.1mm;height:3mm"></span><span class="crop" style="left:25.50mm;top:89.45mm;width:3mm;height:0.1mm"></span><span class="crop" style="left:29.95mm;top:91.00mm;width:0.1mm;height:3mm"></span><span class="crop" style="left:119.50mm;top:89.45mm;width:3mm;height:0.1mm"></span><span class="crop" style="left:117.95mm;top:91.00mm;width:0.1mm;height:3mm"></span>
 <p class="hint">Preview at 2.8×. Print on A4 at 100% (no scaling) for a real-size card: cut along the grey line.
 Add <code>?cut</code> to the URL to see the cut line here.</p>
-<script>if (location.search.includes("cut")) document.body.classList.add("show-cut");</script>
+<script>
+  // ?cut shows the cut line on screen. For make_sheet.py: ?card prints one
+  // page exactly the card's size, and ?blank prints only the cut line.
+  const q = location.search, b = document.body;
+  if (q.includes("cut")) b.classList.add("show-cut");
+  if (q.includes("card") || q.includes("blank")) {
+    b.classList.add("card-only");
+    document.head.insertAdjacentHTML("beforeend", "<style>@page { size: 88mm 59.5mm; margin: 0; }</style>");
+  }
+  if (q.includes("blank")) b.classList.add("blank");
+</script>
 </body>
 </html>

@@ -5,5 +5,27 @@
     "role": "Researcher",
     "org": "Elixpo",
     "photo": "assets/anwe-ch.jpg"
+  },
+  {
+    "handle": "Circuit-Overtime",
+    "name": "Ayushman Bhattacharya",
+    "role": "Founder",
+    "org": "Elixpo",
+    "photo": "assets/Circuit-Overtime.jpg"
+  },
+  {
+    "handle": "nihal-gazi",
+    "name": "Nihal Gazi",
+    "role": "Maintainer",
+    "org": "Elixpo",
+    "photo": "assets/nihal-gazi.jpg",
+    "photo_pos": "50% 30%"
+  },
+  {
+    "handle": "ez-vivek",
+    "name": "Vivek Yadav",
+    "role": "Co-founder",
+    "org": "Elixpo",
+    "photo": "assets/ez-vivek.jpg"
   }
 ]

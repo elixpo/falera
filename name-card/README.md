@@ -32,9 +32,16 @@ template they are cut to.
 - **The Konami code** (↑↑↓↓←→←→ B A ♪) as a hint: entered on the badge, it
   plays the owner's waveform as music, if a GitHub user is set.
 - Faint background geometry, also laid out from the hash.
+- **A theme**: the card's ground, the same faint Elixpo shades as the
+  lanyard: `paper` (#fbfbf8, the default), `butter` (#fbf3d6), `blush`
+  (#fbe9ea) or `bamboo` (#e5f0e8). Set `"theme"` for a person in
+  `people.json`; ink and red stay the same. `renders/card-themes.png` shows a
+  card in all four (every QR decodes on all of them).
+
+![A card in the four themes](renders/card-themes.png)
 
 To add someone: put their photo in `assets/`, add them to `people.json`
-(optional `photo_pos` sets the photo's CSS `object-position`), and run
+(optional: `photo_pos` sets the photo's CSS `object-position`, `theme` its ground), and run
 `python3 make_cards.py --render && python3 make_sheet.py`. Print `renders/sheet-N.pdf` at **100% / actual
 size** and cut along the grey lines.
 

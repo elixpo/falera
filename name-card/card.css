@@ -41,7 +41,7 @@
 .avatar {
   left: 5.5mm; top: 14mm; width: 18mm; height: 18mm;
   border-radius: 50%; object-fit: cover;
-  border: 0.35mm solid #fff;
+  border: 0.35mm solid var(--bg);
 }
 
 /* Centred on the photo (top 14 + 18/2 = 23 mm), for one- or two-line names. */
@@ -59,6 +59,13 @@
   margin-top: 2.6mm; font-size: 3.05mm; line-height: 1.2; color: var(--ink);
 }
 .who .role b { color: var(--red); font-weight: 700; }
+
+/* Themes: faint grounds from the Elixpo palette (falera.elixpo globals.css),
+ * the same as the lanyard's; ink and red stay the card's. */
+.card.theme-paper  { --bg: #fbfbf8; }
+.card.theme-butter { --bg: #fbf3d6; }
+.card.theme-blush  { --bg: #fbe9ea; }
+.card.theme-bamboo { --bg: #e5f0e8; --muted: #5f6962; }
 
 /* Faint geometry behind everything. */
 .bg { left: 0; top: 0; width: 88mm; height: 59.5mm; }
@@ -140,4 +147,5 @@
   .card-only .stage { left: 0; top: 0; }
   .card-only .crop { display: none; }
   .blank .card > :not(.cutline) { visibility: hidden; }
+  .blank .card { background: none; }        /* empty places: outline only, whatever the theme */
 }

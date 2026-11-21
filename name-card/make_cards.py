@@ -14,6 +14,10 @@ Run:
     python3 make_cards.py            # cards/*.html
     python3 make_cards.py --render   # also renders/*.png, renders/*.pdf
 
+A card's ground is its "theme" in people.json: paper (default), butter,
+blush or bamboo, the same faint Elixpo shades as the lanyard. --render also
+writes renders/card-themes.png, one card in every theme.
+
 Needs the qrcode package (pip install qrcode). --render needs a headless
 Chromium: set CHROME to its path, or it looks for Playwright's headless shell,
 chromium and google-chrome.
@@ -34,6 +38,8 @@ import qrcode.image.svg
 
 HERE = Path(__file__).resolve().parent
 W, H = 88.0, 59.5
+# Faint grounds from the Elixpo palette, as on the lanyard (card.css has the colours).
+THEMES = ("paper", "butter", "blush", "bamboo")
 
 GITHUB_MARK = ('<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 '
                '5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82'
@@ -181,7 +187,7 @@ def card(p, path):
     pos = f' style="object-position: {e(p["photo_pos"])}"' if p.get("photo_pos") else ""
     # A long handle doesn't fit after github.com/ on one line: break it.
     cap = f"github.com/{e(h)}" if len(h) <= 9 else f"github.com/<br>{e(h)}"
-    return f"""<div class="card">
+    return f"""<div class="card theme-{e(p.get('theme', 'paper'))}">
     {background(h)}
     <div class="top-label">FALERA BADGE</div>
     {ring(h)}
@@ -297,3 +303,24 @@ if __name__ == "__main__":
         if exe:
             render(exe, f, png=HERE / "renders" / f"{p['handle']}-preview.png",
                    pdf=HERE / "renders" / f"{p['handle']}-print.pdf")
+
+    if exe:
+        # The first card in every theme, side by side: renders/card-themes.png.
+        from PIL import Image
+        p0 = people[1] if len(people) > 1 else people[0]
+        tiles = []
+        for t in THEMES:
+            f = HERE / "cards" / f"_theme-{t}.html"
+            f.write_text(page(dict(p0, theme=t), path))
+            png = HERE / "renders" / f"_theme-{t}.png"
+            render(exe, f, png=png)
+            tiles.append(Image.open(png).crop((175, 136, 1106, 766)))   # the card at 2.8x
+            f.unlink()
+            png.unlink()
+        w, h = tiles[0].size
+        gap = 40
+        sheet = Image.new("RGB", (2 * w + 3 * gap, 2 * h + 3 * gap), "#eaeef2")
+        for k, im in enumerate(tiles):
+            sheet.paste(im, (gap + (k % 2) * (w + gap), gap + (k // 2) * (h + gap)))
+        sheet.save(HERE / "renders" / "card-themes.png", optimize=True)
+        print("renders/card-themes.png")

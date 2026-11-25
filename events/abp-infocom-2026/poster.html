@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Falera poster · ABP Infocom 2026 · A3</title>
+<title>Falera poster · ABP Infocom 2026 · A3 landscape</title>
 <!--
-  A3 portrait poster for ABP Infocom 2026 (JIS University stall, 28 Nov 2026).
-  Every size is in millimetres at print size. Edit the text here, then run
-  `python3 make_poster.py` to rebuild out/poster-a3*.pdf and the PNG preview.
-  ?bleed adds 3 mm of background on every side (the page becomes 303 x 426 mm).
+  A3 landscape poster for ABP Infocom 2026 (JIS University stall, 28 Nov 2026).
+  Every size is in millimetres at print size (420 x 297 mm). Edit the text
+  here, then run `python3 make_poster.py` to rebuild out/poster-a3*.pdf and
+  the PNG preview. ?bleed adds 3 mm of background on every side.
   Claims follow the handoff's rules: 0.5 to 24 FPS is the standalone firmware
   path (12.2 FPS inside FaleraOS, never claimed here); Adafruit featured it;
   the paper is an arXiv preprint; OSHWA certified the board design.
@@ -22,119 +22,115 @@
     --bleed: 0mm;
   }
   .bleed { --bleed: 3mm; }
-  @page { size: calc(297mm + 2 * var(--bleed)) calc(420mm + 2 * var(--bleed)); margin: 0; }
+  @page { size: calc(420mm + 2 * var(--bleed)) calc(297mm + 2 * var(--bleed)); margin: 0; }
   * { box-sizing: border-box; margin: 0; }
   html, body { background: var(--paper); }
-  body { width: calc(297mm + 2 * var(--bleed)); height: calc(420mm + 2 * var(--bleed)); position: relative;
+  body { width: calc(420mm + 2 * var(--bleed)); height: calc(297mm + 2 * var(--bleed)); position: relative;
          font-family: var(--sans); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  /* The trim area: everything below is placed in it, 297 x 420 mm. */
-  .poster { position: absolute; left: var(--bleed); top: var(--bleed); width: 297mm; height: 420mm; overflow: hidden; }
+  /* The trim area, 420 x 297 mm: everything is placed in it. */
+  .poster { position: absolute; left: var(--bleed); top: var(--bleed); width: 420mm; height: 297mm; overflow: hidden; }
   .poster > * { position: absolute; }
 
-  /* Red band along the top edge (runs into the bleed). */
-  .band { left: calc(-1 * var(--bleed)); right: calc(-1 * var(--bleed)); top: calc(-1 * var(--bleed)); height: calc(7mm + var(--bleed)); background: var(--red); }
+  .band { left: calc(-1 * var(--bleed)); right: calc(-1 * var(--bleed)); top: calc(-1 * var(--bleed)); height: calc(6mm + var(--bleed)); background: var(--red); }
 
-  .eyebrow { left: 18mm; top: 15mm; display: flex; align-items: center; gap: 3mm;
-             font: 700 4.2mm/1 var(--mono); letter-spacing: 0.6mm; color: var(--red); text-transform: uppercase; }
-  .eyebrow img { height: 5.2mm; }
-  .event { right: 18mm; top: 15mm; text-align: right; font: 700 4.2mm/1 var(--mono); letter-spacing: 0.6mm; color: var(--muted); text-transform: uppercase; }
+  /* ── Left: title, tagline, highlights ─────────────────────────────── */
+  .eyebrow { left: 18mm; top: 14mm; display: flex; align-items: center; gap: 2.6mm;
+             font: 700 3.6mm/1 var(--mono); letter-spacing: 0.5mm; color: var(--red); text-transform: uppercase; }
+  .eyebrow img { height: 4.6mm; }
+  .eyebrow span { color: var(--muted); }
+  .title { left: 18mm; top: 21mm; width: 128mm; font-family: var(--serif); color: var(--ink); }
+  .title .t1 { display: block; font-size: 25mm; line-height: 1; font-weight: 700; letter-spacing: -0.5mm; color: var(--red); }
+  .title .t2 { display: block; margin-top: 2.4mm; font-size: 8.4mm; line-height: 1.14; font-weight: 700; letter-spacing: -0.15mm; }
+  .tagline { left: 18mm; top: 75mm; width: 128mm; font: italic 4.9mm/1.25 var(--serif); color: var(--dim); }
 
-  .title { left: 18mm; top: 25mm; width: 261mm; font-family: var(--serif); color: var(--ink); }
-  .title .t1 { display: block; font-size: 30mm; line-height: 1; font-weight: 700; letter-spacing: -0.6mm; color: var(--red); }
-  .title .t2 { display: block; margin-top: 3mm; font-size: 12.6mm; line-height: 1.12; font-weight: 700; letter-spacing: -0.2mm; }
-  .tagline { left: 18mm; top: 92mm; font: italic 7.4mm/1.2 var(--serif); color: var(--dim); }
+  .points { left: 18mm; top: 92mm; width: 126mm; display: flex; flex-direction: column; gap: 9mm; }
+  .pt { display: grid; grid-template-columns: 12mm 1fr; column-gap: 4.5mm; padding-top: 4mm; border-top: 1.2mm solid var(--red); }
+  .pt .ic { padding-top: 0.6mm; }
+  .pt .ic svg { width: 12mm; height: 12mm; stroke: var(--red); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .pt h3 { font: 700 6mm/1.15 var(--serif); color: var(--ink); }
+  .pt p { margin-top: 1.8mm; font: 400 4.5mm/1.32 var(--sans); color: var(--dim); }
+  .pt p b { color: var(--ink); }
+  .pt .mark { display: block; margin-top: 2.6mm; height: 10mm; }
 
-  /* Hero: the render of the final board, the working prototype inset. */
-  .hero { left: 8mm; top: 103mm; width: 184mm; }
-  .proto { right: 18mm; top: 166mm; width: 92mm; padding: 2.4mm; background: #fff; border: 0.5mm solid var(--border); }
-  .proto img { display: block; width: 100%; }
-  .proto p { margin-top: 2.2mm; font: 700 3.6mm/1.25 var(--sans); color: var(--ink); }
-  .proto p span { display: block; font-weight: 400; color: var(--muted); }
-  .render-cap { left: 22mm; top: 286mm; font: 400 3.6mm/1 var(--mono); color: var(--muted); letter-spacing: 0.2mm; }
-  .lumi { right: 30mm; top: 116mm; width: 46mm; }
-  .lumi-says { right: 76mm; top: 128mm; width: 52mm; padding: 3mm 3.4mm; background: #fff; border: 0.5mm solid var(--border);
-               border-radius: 3mm; font: 400 4mm/1.3 var(--sans); color: var(--dim); }
+  /* ── Centre: the badge in 3D, Lumi ─────────────────────────────────── */
+  .hero { left: 144mm; top: 11mm; width: 164mm; }
+  .render-cap { left: 150mm; top: 190mm; font: 400 3.4mm/1 var(--mono); color: var(--muted); letter-spacing: 0.2mm; }
+  .lumi { left: 262mm; top: 182mm; width: 40mm; }
+  .lumi-says { left: 212mm; top: 194mm; width: 48mm; padding: 2.6mm 3mm; background: #fff; border: 0.5mm solid var(--border);
+               border-radius: 3mm; font: 400 3.8mm/1.3 var(--sans); color: var(--dim); }
   .lumi-says b { color: var(--red); }
 
-  /* Three highlights. */
-  .points { left: 18mm; top: 296mm; width: 261mm; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7mm; }
-  .pt { border-top: 1.4mm solid var(--red); padding-top: 4mm; }
-  .pt .ic { height: 11mm; display: flex; align-items: center; }
-  .pt .ic svg { width: 11mm; height: 11mm; stroke: var(--red); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-  .pt .ic img { height: 9mm; }
-  .pt h3 { margin-top: 2.6mm; font: 700 5.6mm/1.15 var(--serif); color: var(--ink); }
-  .pt p { margin-top: 2mm; font: 400 4.1mm/1.3 var(--sans); color: var(--dim); }
-  .pt p b { color: var(--ink); }
+  /* ── Right: three screens from FaleraOS ───────────────────────────── */
+  .screens { left: 316mm; top: 14mm; width: 86mm; display: flex; flex-direction: column; gap: 3.6mm; }
+  .screens figure { margin: 0; }
+  .screens .frame { width: 76mm; padding: 2.6mm; background: #1b1f1d; border-radius: 3mm; margin-left: auto; }
+  .screens .frame img { display: block; width: 100%; aspect-ratio: 4 / 3; }
+  .screens figcaption { margin-top: 1.4mm; width: 76mm; margin-left: auto; font: 700 3.6mm/1.2 var(--sans); color: var(--ink); }
+  .screens figcaption span { font-weight: 400; color: var(--muted); }
+  .screens .credit { display: block; margin-top: 0.6mm; font: 400 2.4mm/1.2 var(--sans); color: var(--muted); }
 
-  /* How it works. */
-  .how { left: 18mm; top: 349mm; width: 261mm; display: flex; align-items: center; justify-content: space-between;
-         font: 700 3.7mm/1 var(--mono); color: var(--ink); }
-  .how span { padding: 2.2mm 3mm; background: var(--card); border: 0.4mm solid var(--border); border-radius: 1.6mm; white-space: nowrap; }
+  /* ── How it works, full width ──────────────────────────────────────── */
+  .how { left: 18mm; top: 229mm; width: 384mm; display: flex; align-items: center; justify-content: space-between;
+         font: 700 3.8mm/1 var(--mono); color: var(--ink); }
+  .how span { padding: 2.2mm 3.4mm; background: var(--card); border: 0.4mm solid var(--border); border-radius: 1.6mm; white-space: nowrap; }
   .how i { font-style: normal; color: var(--red); font-weight: 700; font-size: 6mm; }
 
-  /* Footer: QR codes, who, logos. */
-  .foot { left: 0; right: 0; bottom: 0; height: 57mm; background: var(--card); border-top: 0.5mm solid var(--border); }
-  .qr { left: 18mm; top: 369mm; display: flex; gap: 6mm; align-items: flex-end; }
-  .qr figure { text-align: center; }
+  /* ── Footer: QR codes, who, logos ─────────────────────────────────── */
+  .foot { left: 0; right: 0; bottom: 0; height: 52mm; background: var(--card); border-top: 0.5mm solid var(--border); }
+  .qr { left: 18mm; top: 249mm; display: flex; gap: 6mm; align-items: flex-end; }
+  .qr figure { margin: 0; text-align: center; }
   .qr img { display: block; background: #fff; }
   .qr .main img { width: 40mm; height: 40mm; }   /* the handoff: at least 4 x 4 cm */
   .qr .small img { width: 24mm; height: 24mm; }
   .qr figcaption { margin-top: 1.2mm; font: 700 3.1mm/1.15 var(--mono); color: var(--ink); }
-  .qr figcaption span { display: block; font-weight: 400; color: var(--muted); }
-  .who { left: 98mm; top: 381mm; }
-  .who .name { font: 700 7mm/1.1 var(--serif); color: var(--ink); }
-  .who .role { margin-top: 1.6mm; font: 400 4.4mm/1.3 var(--sans); color: var(--dim); }
+  .who { left: 104mm; top: 256mm; }
+  .who .name { font: 700 7.4mm/1.1 var(--serif); color: var(--ink); }
+  .who .role { margin-top: 1.8mm; font: 400 4.6mm/1.3 var(--sans); color: var(--dim); }
   .who .role b { color: var(--red); }
-  .who .url { margin-top: 2.4mm; font: 700 4mm/1 var(--mono); color: var(--red); letter-spacing: 0.2mm; }
-  .logos { right: 18mm; top: 383mm; display: flex; align-items: center; gap: 5mm; }
-  .logos .oshw { height: 10mm; }
-  .logos .wordmark { font: 700 9mm/1 var(--sans); letter-spacing: -0.3mm; color: var(--ink); }
-  .logos .jis { height: 16mm; }
-  /* Until the official JIS University logo is in assets/jis-logo.png. */
-  .logos .jis-slot { width: 34mm; height: 16mm; border: 0.5mm dashed var(--muted); border-radius: 1.6mm;
-                     display: flex; align-items: center; justify-content: center; text-align: center;
-                     font: 700 3mm/1.2 var(--mono); color: var(--muted); }
+  .who .url { margin-top: 2.6mm; font: 700 4.2mm/1 var(--mono); color: var(--red); letter-spacing: 0.2mm; }
+  .logos { right: 18mm; top: 252mm; height: 38mm; display: flex; align-items: center; gap: 10mm; }
+  .logos .jis { height: 34mm; }
+  .logos .elixpo { height: 34mm; }
 </style>
 </head>
 <body>
 <div class="poster">
   <div class="band"></div>
-  <div class="eyebrow"><img src="assets/bow.svg" alt="">JIS University</div>
-  <div class="event">ABP Infocom 2026 · Kolkata</div>
 
+  <div class="eyebrow"><img src="assets/bow.svg" alt="">JIS University <span>· ABP Infocom 2026 · Kolkata</span></div>
   <h1 class="title"><span class="t1">Falera:</span><span class="t2">An Open-Source Smart Badge<br>with Its Own Operating System</span></h1>
   <p class="tagline">I designed the board and wrote its operating system.</p>
-
-  <img class="hero" src="assets/hero-final.png" alt="The Falera Badge: the final board with its screen, name card and lanyard">
-  <p class="render-cap">The final board, in 3D</p>
-
-  <img class="lumi" src="assets/lumi-badge-3x.png" alt="Lumi, the Falera panda">
-  <p class="lumi-says">Hi, I'm <b>Lumi</b>. Come and try the badge!</p>
-
-  <figure class="proto">
-    <img src="assets/photo_land.jpg" alt="The working prototype on a breadboard">
-    <p>The working prototype<span>On the table: try it.</span></p>
-  </figure>
 
   <div class="points">
     <div class="pt">
       <div class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg></div>
-      <h3>Its own operating system</h3>
-      <p><b>FaleraOS</b>, on MicroPython: apps, an App Store and over-the-air updates.</p>
+      <div><h3>Its own operating system</h3><p><b>FaleraOS</b>, on MicroPython: apps, an App Store and over-the-air updates.</p></div>
     </div>
     <div class="pt">
-      <div class="ic"><img src="assets/oshw_mark.png" alt="Open Source Hardware"></div>
-      <h3>Certified open hardware design</h3>
-      <p>Certified by <b>OSHWA</b>, UID IN000107 <span style="white-space:nowrap">(CERN-OHL-P)</span>.</p>
+      <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.3 2 3-.4.9 2.9 2.7 1.4-.8 2.9 1.4 2.7-2.4 1.8-.3 3-3 .3-1.8 2.4-2.7-1.4-2.7 1.4-1.8-2.4-3-.3-.3-3L2.3 14l1.4-2.7-.8-2.9 2.7-1.4.9-2.9 3 .4z"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8"/></svg></div>
+      <div><h3>Certified open hardware design</h3><p>Certified by <b>OSHWA</b>, UID IN000107 <span style="white-space:nowrap">(CERN-OHL-P)</span>.</p><img class="mark" src="assets/oshw_mark.png" alt="Open Source Hardware certification mark, IN000107"></div>
     </div>
     <div class="pt">
       <div class="ic"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M10 9.2v5.6l4.8-2.8z"/></svg></div>
-      <h3>Smooth video on a microcontroller</h3>
-      <p><b>RV565</b>, a video format I invented, took playback from <b>0.5 to 24 FPS</b>. Featured on the Adafruit blog; preprint on arXiv.</p>
+      <div><h3>Smooth video on a microcontroller</h3><p><b>RV565</b>, a video format I invented, took playback from <b>0.5 to 24 FPS</b>. Featured on the Adafruit blog; preprint on arXiv.</p></div>
     </div>
   </div>
 
-  <div class="how"><span>ESP32-S3</span><i>→</i><span>FaleraOS</span><i>→</i><span>Apps &amp; App Store</span><i>→</i><span>RV565 video</span><i>→</i><span>SPI display</span></div>
+  <img class="hero" src="assets/hero-final.png" alt="The Falera Badge: the final board with its screen, name card and lanyard">
+  <p class="render-cap">The final board, in 3D</p>
+  <p class="lumi-says">Hi, I'm <b>Lumi</b>. Come and try the badge!</p>
+  <img class="lumi" src="assets/lumi-badge-3x.png" alt="Lumi, the Falera panda">
+
+  <div class="screens">
+    <figure><div class="frame"><img src="assets/screen-store.png" alt="FaleraOS App Store"></div>
+      <figcaption>App Store <span>· apps install over Wi-Fi</span></figcaption></figure>
+    <figure><div class="frame"><img src="assets/screen-video.png" alt="A film playing on the badge"></div>
+      <figcaption>Video <span>· RV565 on the badge</span><span class="credit">Big Buck Bunny © Blender Foundation, CC BY 3.0</span></figcaption></figure>
+    <figure><div class="frame"><img src="assets/screen-about.png" alt="FaleraOS About screen"></div>
+      <figcaption>About <span>· FaleraOS on the ESP32-S3</span></figcaption></figure>
+  </div>
+
+  <div class="how"><span>ESP32-S3</span><i>→</i><span>FaleraOS (MicroPython)</span><i>→</i><span>Apps &amp; App Store</span><i>→</i><span>RV565 video</span><i>→</i><span>SPI display</span></div>
 
   <div class="foot"></div>
   <div class="qr">
@@ -147,16 +143,10 @@
     <div class="url">falera.elixpo.com</div>
   </div>
   <div class="logos">
-    <span class="wordmark">Elixpo</span>
-    <div class="jis-slot" id="jis">JIS University<br>logo here</div>
+    <img class="jis" src="assets/jis_university_logo.png" alt="JIS University">
+    <img class="elixpo" src="assets/elixpo-lockup-clean.png" alt="Elixpo, built in the open">
   </div>
 </div>
-<script>
-  if (location.search.includes("bleed")) document.documentElement.classList.add("bleed");
-  // The official JIS University logo, once it is in assets/: replaces the slot.
-  const jis = new Image();
-  jis.onload = () => { const s = document.getElementById("jis"); jis.className = "jis"; jis.alt = "JIS University"; s.replaceWith(jis); };
-  jis.src = "assets/jis-logo.png";
-</script>
+<script>if (location.search.includes("bleed")) document.documentElement.classList.add("bleed");</script>
 </body>
 </html>

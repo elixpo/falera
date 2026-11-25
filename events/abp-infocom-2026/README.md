@@ -33,7 +33,7 @@ a 300 dpi raster of the RGB and the CMYK PDF; the main one is 40 × 40 mm.
 | `assets/jis_university_logo.png`, `assets/elixpo_lock_up_text_mascot.png` | the official logos, as provided |
 | `assets/elixpo-lockup-clean.png` | the Elixpo lock-up with its off-white background removed and cropped (the drawing untouched), so it sits on the poster's paper |
 | `assets/screen-*.png` | FaleraOS screenshots (falera.elixpo/public/screens), 4x; the video frame is Big Buck Bunny, © Blender Foundation, CC BY 3.0, credited on the poster |
-| `assets/press/*.svg` | the official Adafruit, Arduino and OpenSSF logos (Wikimedia Commons) and Espressif's (espressif.com), for the "Featured by / Recognised by" row; MA-NO and HardLabs are set as text. The row follows falera.elixpo/src/data/press.ts |
+| `assets/press/*.svg` | the official Adafruit, Arduino and OpenSSF logos (Wikimedia Commons) and Espressif's (espressif.com), and MA-NO's and HardLabs' as provided (MA-NO's white logo sits on a dark tile; HardLabs' is 64 px, so it's a 9 mm icon beside the name), for the "Featured by / Recognised by" row. The row follows falera.elixpo/src/data/press.ts |
 | `compose_hero.py` | puts FaleraOS's real home screen on the display (exact perspective) and drops kicad-cli's ground shadow → `assets/hero-final.png` |
 
 ```

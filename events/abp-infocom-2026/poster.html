@@ -74,6 +74,10 @@
   .press .lab { font: 700 3.3mm/1.15 var(--mono); letter-spacing: 0.4mm; color: var(--red); text-transform: uppercase; white-space: nowrap; }
   .press img { display: block; }
   .press .word { font: 700 5.4mm/1 var(--sans); color: var(--ink); letter-spacing: -0.1mm; white-space: nowrap; }
+  /* MA-NO's logo is white: on a dark tile, as it's meant to be shown. */
+  .press .tile { display: flex; align-items: center; padding: 1.8mm 3mm; background: var(--ink); border-radius: 1.6mm; }
+  .press .tile img { height: 7mm; }
+  .press .with-icon { display: flex; align-items: center; gap: 2mm; }
   .press .sep { width: 0.4mm; align-self: stretch; background: var(--border); margin: 0 2mm; }
 
   /* ── Footer: QR codes, who, logos ─────────────────────────────────── */
@@ -141,8 +145,8 @@
   <div class="press">
     <span class="lab">Featured by</span>
     <img src="assets/press/adafruit.svg" alt="Adafruit" style="height:10.5mm">
-    <span class="word">MA-NO</span>
-    <span class="word">HardLabs</span>
+    <span class="tile"><img src="assets/press/ma-no.png" alt="MA-NO"></span>
+    <span class="with-icon"><img src="assets/press/hardlabs.png" alt="" style="height:9mm"><span class="word">HardLabs</span></span>
     <span class="sep"></span>
     <span class="lab">Recognised by</span>
     <img src="assets/press/espressif.svg" alt="Espressif" style="height:7.5mm">

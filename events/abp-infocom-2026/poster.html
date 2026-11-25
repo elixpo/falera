@@ -69,11 +69,12 @@
   .screens figcaption span { font-weight: 400; color: var(--muted); }
   .screens .credit { display: block; margin-top: 0.6mm; font: 400 2.4mm/1.2 var(--sans); color: var(--muted); }
 
-  /* ── How it works, full width ──────────────────────────────────────── */
-  .how { left: 18mm; top: 229mm; width: 384mm; display: flex; align-items: center; justify-content: space-between;
-         font: 700 3.8mm/1 var(--mono); color: var(--ink); }
-  .how span { padding: 2.2mm 3.4mm; background: var(--card); border: 0.4mm solid var(--border); border-radius: 1.6mm; white-space: nowrap; }
-  .how i { font-style: normal; color: var(--red); font-weight: 700; font-size: 6mm; }
+  /* ── Who wrote about it and who recognised it, full width ──────────── */
+  .press { left: 18mm; top: 225mm; width: 384mm; height: 15mm; display: flex; align-items: center; justify-content: space-between; }
+  .press .lab { font: 700 3.3mm/1.15 var(--mono); letter-spacing: 0.4mm; color: var(--red); text-transform: uppercase; white-space: nowrap; }
+  .press img { display: block; }
+  .press .word { font: 700 5.4mm/1 var(--sans); color: var(--ink); letter-spacing: -0.1mm; white-space: nowrap; }
+  .press .sep { width: 0.4mm; align-self: stretch; background: var(--border); margin: 0 2mm; }
 
   /* ── Footer: QR codes, who, logos ─────────────────────────────────── */
   .foot { left: 0; right: 0; bottom: 0; height: 52mm; background: var(--card); border-top: 0.5mm solid var(--border); }
@@ -83,11 +84,14 @@
   .qr .main img { width: 40mm; height: 40mm; }   /* the handoff: at least 4 x 4 cm */
   .qr .small img { width: 24mm; height: 24mm; }
   .qr figcaption { margin-top: 1.2mm; font: 700 3.1mm/1.15 var(--mono); color: var(--ink); }
-  .who { left: 104mm; top: 256mm; }
+  .who { left: 104mm; top: 251mm; }
   .who .name { font: 700 7.4mm/1.1 var(--serif); color: var(--ink); }
   .who .role { margin-top: 1.8mm; font: 400 4.6mm/1.3 var(--sans); color: var(--dim); }
   .who .role b { color: var(--red); }
-  .who .url { margin-top: 2.6mm; font: 700 4.2mm/1 var(--mono); color: var(--red); letter-spacing: 0.2mm; }
+  .who .mail { margin-top: 1.6mm; font: 700 4.2mm/1 var(--mono); color: var(--ink); letter-spacing: 0.1mm; }
+  .who .url { margin-top: 3.2mm; font: 700 4.2mm/1 var(--mono); color: var(--red); letter-spacing: 0.2mm; }
+  .who .team { margin-top: 1.6mm; font: 400 4.2mm/1.3 var(--sans); color: var(--dim); }
+  .who .team b { font-weight: 700; color: var(--ink); }
   .logos { right: 18mm; top: 252mm; height: 38mm; display: flex; align-items: center; gap: 10mm; }
   .logos .jis { height: 34mm; }
   .logos .elixpo { height: 34mm; }
@@ -130,7 +134,22 @@
       <figcaption>About <span>· FaleraOS on the ESP32-S3</span></figcaption></figure>
   </div>
 
-  <div class="how"><span>ESP32-S3</span><i>→</i><span>FaleraOS (MicroPython)</span><i>→</i><span>Apps &amp; App Store</span><i>→</i><span>RV565 video</span><i>→</i><span>SPI display</span></div>
+  <!-- From falera.elixpo/src/data/press.ts: Adafruit featured FaleraOS (4 Nov) and
+       RV565 (10 Nov); MA-NO and HardLabs wrote about it. Espressif assigned the USB ID,
+       OSHWA certified the board design, OpenSSF gave the Best Practices badge, and
+       RV565 is in the Arduino Library Manager. Logos: Wikimedia Commons, espressif.com. -->
+  <div class="press">
+    <span class="lab">Featured by</span>
+    <img src="assets/press/adafruit.svg" alt="Adafruit" style="height:10.5mm">
+    <span class="word">MA-NO</span>
+    <span class="word">HardLabs</span>
+    <span class="sep"></span>
+    <span class="lab">Recognised by</span>
+    <img src="assets/press/espressif.svg" alt="Espressif" style="height:7.5mm">
+    <img src="assets/oshw_mark.png" alt="OSHWA" style="height:8.5mm">
+    <img src="assets/press/openssf.svg" alt="OpenSSF" style="height:10.5mm">
+    <img src="assets/press/arduino.svg" alt="Arduino" style="height:10.5mm">
+  </div>
 
   <div class="foot"></div>
   <div class="qr">
@@ -139,8 +158,10 @@
   </div>
   <div class="who">
     <div class="name">Ayushman Bhattacharya</div>
+    <div class="mail">ayushman@elixpo.com</div>
     <div class="role">Founder, <b>Elixpo</b> · JIS University</div>
     <div class="url">falera.elixpo.com</div>
+    <div class="team">with <b>Vivek Yadav</b> · <b>Anwesha Chakraborty</b></div>
   </div>
   <div class="logos">
     <img class="jis" src="assets/jis_university_logo.png" alt="JIS University">

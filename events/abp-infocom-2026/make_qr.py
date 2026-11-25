@@ -13,6 +13,7 @@ INK = "#142018"
 CODES = {
     "qr-github": "https://github.com/elixpo/falera",
     "qr-arxiv": "https://arxiv.org/abs/2610.35935",
+    "qr-fund": "https://payouts.elixpo.com/f/falera-badge",
 }
 
 

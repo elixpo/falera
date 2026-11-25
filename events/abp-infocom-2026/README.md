@@ -1,4 +1,4 @@
-# ABP Infocom 2026: poster and QR cards
+# ABP Infocom 2026: poster, cards and the pitch
 
 For the JIS University stall at ABP Infocom 2026, Hyatt Regency, Kolkata,
 28 November 2026. Project title (official, from the nomination):
@@ -14,6 +14,8 @@ For the JIS University stall at ABP Infocom 2026, Hyatt Regency, Kolkata,
 | `poster-a3-bleed3mm.pdf` | the same with 3 mm bleed on every side (426 × 303 mm), if the print shop asks |
 | `poster-a3-cmyk.pdf` | the no-bleed poster converted to CMYK (made by `make_poster.py`, not in git) |
 | `qr-cards-a4.pdf` | ten 85 × 55 mm QR cards on A4, with crop marks |
+| `funding-card.pdf` | A5 portrait card for the table: the fundraiser QR (payouts.elixpo.com/f/falera-badge), what each amount buys, sponsor levels |
+| `cue-cards-a4.pdf` | four A6 pocket cue cards: the opener and close, and the three pitches |
 | `*-preview.png` | previews at 100 dpi |
 
 Images print above 300 dpi: the hero at 372 dpi, the three screenshots at
@@ -21,14 +23,21 @@ Images print above 300 dpi: the hero at 372 dpi, the three screenshots at
 at 713 dpi, the logos above 500 dpi. Both QR codes decode from
 a 300 dpi raster of the RGB and the CMYK PDF; the main one is 40 × 40 mm.
 
+## The pitch
+
+[PITCH.md](PITCH.md): a five-second opener, three 30-second pitches to pick by
+mood (A "It's a computer", B "The video trick", C "Open, and built here"),
+the funding close, quick answers and a don't-say list.
+
 ## Sources
 
 | File | What |
 | --- | --- |
 | `poster.html` | the poster, in millimetres; edit the text here. Left: title and highlights; centre: the badge in 3D and Lumi; right: three FaleraOS screens (App Store, video, About); a "Featured by / Recognised by" row; footer: QR codes, name and email, the team, logos |
 | `cards.html` | the QR card (one `<template>`, repeated ten times) |
+| `funding-card.html`, `cue-cards.html` | the funding card and the cue cards |
 | `make_poster.py` | prints both to PDF, makes the bleed and CMYK copies and the previews |
-| `make_qr.py` | writes `assets/qr-github.svg` and `assets/qr-arxiv.svg` |
+| `make_qr.py` | writes `assets/qr-github.svg`, `assets/qr-arxiv.svg` and `assets/qr-fund.svg` |
 | `render_hero.py` | renders the badge in 3D (kicad-cli, 3000 px, transparent), with Ayushman's card and the lanyard, from `circuit/elixpo/render_board.py`'s models |
 | `assets/jis_university_logo.png`, `assets/elixpo_lock_up_text_mascot.png` | the official logos, as provided |
 | `assets/elixpo-lockup-clean.png` | the Elixpo lock-up with its off-white background removed and cropped (the drawing untouched), so it sits on the poster's paper |

@@ -2,15 +2,17 @@
 """Build the ABP Infocom 2026 print files from poster.html and cards.html.
 
 Writes, into out/:
-    poster-a3.pdf            297 x 420 mm, no bleed
-    poster-a3-bleed3mm.pdf   303 x 426 mm: 3 mm of background on every side
+    poster-a3.pdf            A3 landscape, 420 x 297 mm, no bleed
+    poster-a3-bleed3mm.pdf   426 x 303 mm: 3 mm of background on every side
     poster-a3-cmyk.pdf       the no-bleed poster converted to CMYK (Ghostscript)
     poster-a3-preview.png    a preview at 100 dpi
     qr-cards-a4.pdf          85 x 55 mm QR cards, ten to an A4 sheet, crop marks
     qr-cards-preview.png
+    funding-card.pdf         A5 portrait: the fundraiser QR, to stand on the table
+    cue-cards-a4.pdf         four A6 cue cards: the opener and the three pitches (PITCH.md)
 
 Chromium prints the pages at their CSS millimetre sizes; images are placed at
-their full resolution (the hero is 2400 px across 196 mm, over 300 dpi).
+their full resolution (every image prints above 300 dpi).
 
 Run: python3 make_poster.py
      (needs a headless Chromium, as for circuit/card/name-card/make_cards.py,
@@ -59,6 +61,10 @@ def main():
     if (HERE / "cards.html").exists():
         pdf(exe, "cards.html", "", OUT / "qr-cards-a4.pdf")
         preview(OUT / "qr-cards-a4.pdf", OUT / "qr-cards-preview.png", 100)
+    for page, name in (("funding-card.html", "funding-card"), ("cue-cards.html", "cue-cards-a4")):
+        if (HERE / page).exists():
+            pdf(exe, page, "", OUT / f"{name}.pdf")
+            preview(OUT / f"{name}.pdf", OUT / f"{name}-preview.png", 100)
 
 
 if __name__ == "__main__":

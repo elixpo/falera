@@ -5,15 +5,29 @@ laptop shows the stall screen; the badge does the talking.
 
 ## Set up the laptop before people arrive
 
-1. **Browser, full screen (F11)**, three tabs in this order:
-   1. `events/abp-infocom-2026/stall-screen.html`. Keys **1–5** switch its
-      views: **1** the overview (leave it on between demos), **2** the three
-      layers, **3** what it does (updates over the air, infrared, the RV565
-      video format), **4** the research paper, **5** star and back it.
-   2. https://arxiv.org/abs/2610.35935 (the paper itself, if someone wants
-      to see the PDF).
-   3. https://falera.elixpo.com/badge/ (the 3D board, as a backup if the
-      badge misbehaves).
+1. **Keep open on the laptop**, in this order (browser full screen with F11):
+
+   | # | What | Open | Needs internet? |
+   | --- | --- | --- | --- |
+   | Tab 1 | **The stall screen**: keys **1** overview (leave it on between demos), **2** the three layers, **3** what it does (updates, infrared, RV565), **4** the paper, **5** star and back it | `file:///home/elixpo/elixpo_projects/oreoOS/events/abp-infocom-2026/stall-screen.html` | No (all local) |
+   | Tab 2 | **The paper, as a PDF** (14 pages) | `file:///home/elixpo/Documents/falera-pitch/demo/rv565-arxiv-2610.35935.pdf` | No |
+   | Tab 3 | The paper's arXiv page (shows it's public) | https://arxiv.org/abs/2610.35935 | Yes |
+   | Tab 4 | **The repo**, for "star it": the star button, the README | https://github.com/elixpo/falera | Yes |
+   | Tab 5 | The 3D board, as a backup if the badge misbehaves | https://falera.elixpo.com/badge/ | Yes |
+   | Tab 6 | The fundraiser, to show the live total | https://payouts.elixpo.com/f/falera-badge | Yes |
+   | Window | **The terminal**, split in two (step 3 below) | | No |
+
+   Open only if needed, from `~/Documents/falera-pitch/`:
+
+   | What | File |
+   | --- | --- |
+   | The poster, full size (if someone asks for a closer look) | `poster/falera-poster-a3.pdf` |
+   | The funding card | `poster/falera-funding-card-a5.pdf` |
+   | The Star Falera card (if the transfer fails and you want to show it) | `demo/star-falera-card.png` |
+   | The demo video recorded the night before (if the hardware fails) | wherever you save it, e.g. `demo/` |
+
+   If the venue has no internet, tabs 1 and 2 and the terminal are all you
+   need: the stall screen and the paper are local files.
 2. **USB: use the board's UART port** (the CH343 chip; it shows as
    `/dev/ttyACM0`). Not the port marked USB: that one didn't answer as
    MicroPython. In every terminal: `export OREO_PORT=/dev/ttyACM0` (after a

@@ -28,10 +28,12 @@ oreoWare.display.Display() and oreoOS.hostui stop a player left running
 MAX_TOTAL_MS + LIFE_MARGIN_MS.
 
 Fallback. OTA replaces OS files, never the firmware, so on older firmware
-(or without the clip, or if the player fails to start) the animation runs
-on a Python thread as before. It keeps moving while boot imports modules
-and starts the radios, but shares the interpreter lock with them, so it can
-stutter. Boot code never has to call into either.
+(or without the clip, or if the player fails to start) there is no native
+player. A rolling animation on a Python thread shares the interpreter lock
+with boot's imports and radio start-up, so it stutters; by default the
+fallback therefore keeps the first greeting still and only moves the loader
+(a few rows, redrawn on the thread). ANIMATE_WITHOUT_NATIVE = True brings
+the rolling Python animation back. Boot code never has to call into either.
 
     sp = Splash(os_obj)
     sp.intro()          # first frame, starts the native player or the thread
@@ -87,6 +89,11 @@ NATIVE           = True      # use the firmware's player when it has one
 LIFE_MARGIN_MS   = 6000      # it stops itself this long after MAX_TOTAL_MS
 STOP_TIMEOUT_MS  = 1000      # finish() waits this long for a word at rest
 CLIP_CHUNK       = 8192      # bytes per splash_load() while copying the clip
+
+
+# Without the firmware's player, roll the greetings on a Python thread
+# (stutters while boot works) or keep the first one still (the default).
+ANIMATE_WITHOUT_NATIVE = False
 
 
 def clip_time(i):
@@ -421,6 +428,7 @@ class Splash:
         self._done_ms = None
         self._bar_px = -1
         self._native = None
+        self._still = False         # fallback without the native player
         try:
             a = _Art(BIN_PATH)
             self._art = a
@@ -447,6 +455,7 @@ class Splash:
                 return
             self._first_frame()
             if not self._start_native():
+                self._still = not ANIMATE_WITHOUT_NATIVE
                 self._start_thread()
         except Exception as e:
             print("[splash] intro:", e)
@@ -489,7 +498,7 @@ class Splash:
                     while True:
                         t = _diff(_ms(), self._start)
                         full = t >= self._done_ms + FILL_MS
-                        rest = roll_state(t, self._art.count, self._art.band_h)[2] == 0
+                        rest = self._still or roll_state(t, self._art.count, self._art.band_h)[2] == 0
                         if (full and rest) or t >= limit:
                             break
                         self._tick_wait()
@@ -637,7 +646,7 @@ class Splash:
         d = self._os.display
         t = _diff(_ms(), self._start)
         k, n, off = roll_state(t, a.count, a.band_h)
-        if (k, off) != self._last:
+        if not self._still and (k, off) != self._last:
             self._ensure(k, n)
             self._last = (k, off)
             self._draw_band(k, n, off)

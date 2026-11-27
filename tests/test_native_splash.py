@@ -319,16 +319,25 @@ class NativeChoiceTest(_SplashCase):
 
     def test_old_firmware_falls_back_to_python(self):
         """OTA never updates the firmware: an _oreo_rv565 with only
-        inflate_frame means the Python animation, as before."""
+        inflate_frame means the Python fallback. By default it keeps the
+        greeting still (the band is never redrawn); with
+        ANIMATE_WITHOUT_NATIVE it rolls, as before."""
         old = types.ModuleType("_oreo_rv565")
         old.inflate_frame = lambda src, dst: 0
-        d, os_obj, s, threads = self._run(old)
-        self.assertEqual(threads, [1])
         art = self.sp._Art(str(BIN))
         try:
             band = (0, art.band_y, self.sp.SW, art.band_h)
         finally:
             art.close()
+        d, os_obj, s, threads = self._run(old)
+        self.assertEqual(threads, [1])
+        self.assertNotIn(band, d.presented)
+        self.assertIsNotNone(os_obj._splash_frame)
+        self.sp.ANIMATE_WITHOUT_NATIVE = True
+        try:
+            d, os_obj, s, threads = self._run(old)
+        finally:
+            self.sp.ANIMATE_WITHOUT_NATIVE = False
         self.assertIn(band, d.presented)
         self.assertIsNotNone(os_obj._splash_frame)
 

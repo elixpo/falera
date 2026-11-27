@@ -185,6 +185,41 @@ class SplashHelpersTest(unittest.TestCase):
         self.assertEqual(size, 320 * 240 * 2)
 
     def test_full_splash_run_without_thread(self):
+        """The animated fallback (ANIMATE_WITHOUT_NATIVE): the band rolls."""
+        self.sp.ANIMATE_WITHOUT_NATIVE = True
+        try:
+            self._full_splash_run_without_thread()
+        finally:
+            self.sp.ANIMATE_WITHOUT_NATIVE = False
+
+    def test_still_fallback_redraws_only_the_loader(self):
+        """The default fallback without the native player keeps the first
+        greeting still: only the loader is redrawn, so nothing stutters."""
+        sp = self.sp
+        self.assertFalse(sp.ANIMATE_WITHOUT_NATIVE)
+        clock = FakeClock()
+        sp.time = clock
+        d = FakeDisplay(sp.SW, sp.SH)
+        d._buf = d.buf
+        os_obj = types.SimpleNamespace(display=d, _last_brightness=70)
+        s = sp.Splash(os_obj)
+        s._start_thread = lambda: None
+        band_y, band_h = s._art.band_y, s._art.band_h
+        bar = (s._art.bar_x, s._art.bar_y, s._art.bar_w, s._art.bar_h)
+        s.intro()
+        s.progress(0.6)
+        for _ in range(40):
+            s.pump()
+            clock.t += 30
+        s.finish()
+        self.assertGreaterEqual(clock.t, sp.MIN_TOTAL_MS)
+        self.assertEqual(d.presented[0], None)            # first full frame, with "hello"
+        rects = d.presented[1:]
+        self.assertTrue(rects)
+        self.assertTrue(all(p == bar for p in rects))     # the band is never redrawn
+        self.assertEqual(len(os_obj._splash_frame), sp.SW * sp.SH * 2)
+
+    def _full_splash_run_without_thread(self):
         sp = self.sp
         clock = FakeClock()
         sp.time = clock

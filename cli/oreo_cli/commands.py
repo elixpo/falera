@@ -67,6 +67,8 @@ def show_info(ui, info, port):
         rows.append(("battery", "[dim]no reading (USB power)[/]"))
     if info.get("mem_free") is not None:
         rows.append(("RAM free", human(info["mem_free"])))
+    if info.get("live"):
+        rows.append(("link", "live link v%s [dim](FaleraOS kept running)[/]" % info["live"]))
     ui.kv(rows, title="Falera Badge")
 
     st = (info.get("storage") or {}).get("stats") or {}
@@ -87,7 +89,7 @@ def show_info(ui, info, port):
 
 @command("info")
 def cmd_info(ctx):
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         with ctx.ui.status("reading the badge"):
             info = b.info()
         ctx.ui.header("info")
@@ -321,7 +323,7 @@ def cmd_logs(ctx):
 
 @command("ls")
 def cmd_ls(ctx):
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         entries = b.ls(ctx.args.path)
     path = norm(ctx.args.path)
     ctx.ui.header("ls", path)
@@ -397,13 +399,25 @@ def push_files(ui, b, files, targets, verify=True):
                              check_space=False, screen=("Receiving files", detail))
 
 
+def after_live_change(ui, b, paths):
+    """FaleraOS kept running while files changed under it: apps are
+    listed again; its own modules load only when it starts."""
+    paths = [norm(p) for p in paths]
+    if any(_inside(p, "/apps") for p in paths):
+        b.apps_changed()
+    if any(p in ("/main.py", "/boot.py") or any(_inside(p, t) for t in SYSTEM_TREES)
+           for p in paths):
+        ui.note("FaleraOS kept running the code it had loaded; restart it to use the new "
+                "files (`falera --reset soft info`, or unplug and replug)")
+
+
 @command("push")
 def cmd_push(ctx):
     ui = ctx.ui
     args = ctx.args
     files = _local_files(args.sources, args.recursive)
     total = sum(f.stat().st_size for f, _ in files)
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         st = b.stat(args.dest)
         if st is None and args.dest.endswith("/"):
             st = {"dir": True, "size": 0}
@@ -415,6 +429,8 @@ def cmd_push(ctx):
         ui.header("push", "%d file(s), %s -> %s" % (len(files), human(total), esc(norm(args.dest))))
         push_files(ui, b, files, targets, verify=not args.no_verify)
         ui.ok("copied %d file(s) to %s" % (len(files), esc(norm(args.dest))))
+        if getattr(b, "live", False):
+            after_live_change(ui, b, targets)
 
 
 def pull_files(ui, b, jobs):
@@ -440,7 +456,7 @@ def cmd_pull(ctx):
     if args.dest.endswith(("/", os.sep)) and not local.exists():
         with local_file(local):
             local.mkdir(parents=True)
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         st = b.stat(src)
         if st is None:
             raise OreoError("%s: not found on the badge" % src)
@@ -482,7 +498,7 @@ def cmd_screenshot(ctx):
     if not 1 <= scale <= screenshot.MAX_SCALE:
         raise UsageError("--scale must be 1 to %d" % screenshot.MAX_SCALE)
     target = screenshot_path(args.file)
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         with ui.status("reading the badge's screen"):
             w, h, data, dirty = screenshot.capture(b)
     png = screenshot.to_png(data, w, h, scale)
@@ -491,7 +507,7 @@ def cmd_screenshot(ctx):
             target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(png)
     if dirty:
-        ui.warn("FaleraOS was stopped while drawing a frame, so the picture may be "
+        ui.warn("FaleraOS was drawing a frame when it was read, so the picture may be "
                 "half drawn; run the command again if it looks wrong")
     ui.ok("saved %dx%d screenshot to %s" % (w * scale, h * scale, esc(target)))
 
@@ -537,10 +553,12 @@ def cmd_rm(ctx):
         if not ui.confirm("Remove %s%s from the badge?" % (esc(what), " and everything inside"
                                                           if args.recursive else "")):
             raise Cancelled("nothing removed")
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         for p in args.paths:
             b.rm(p, recursive=args.recursive)
             ui.ok("removed %s" % esc(norm(p)))
+        if getattr(b, "live", False):
+            after_live_change(ui, b, args.paths)
 
 
 # ── add (media) ──────────────────────────────────────────────────────
@@ -608,7 +626,7 @@ def cmd_add(ctx):
     ctx.ui.header("add", "%d file(s)" % len(args.files))
     prepared = prepare_media(ctx.ui, args.files, MediaOptions(
         args.kind, args.seconds, args.fps, args.width, args.height, args.photo_max, args.save))
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         send_media(ctx.ui, b, prepared)
 
 
@@ -698,7 +716,7 @@ def apps_action(ui, b, action, app=None):
 @command("apps")
 def cmd_apps(ctx):
     check_app_args(ctx.args.action, ctx.args.app)   # before touching the badge
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         return apps_action(ctx.ui, b, ctx.args.action, ctx.args.app)
 
 
@@ -823,7 +841,7 @@ def cmd_wifi(ctx):
     if action == "connect":
         # Ask before touching the badge, so a cancelled prompt changes nothing.
         password = read_password(ctx.ui, args.ssid, args.open, args.password_stdin)
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         if action == "scan":
             wifi_scan(ctx.ui, b, args.timeout)
         elif action == "saved":

@@ -5,7 +5,10 @@ Display._buf, 320x240) and sends it to the panel as it is: big-endian
 RGB565, pixel i = buf[2i] << 8 | buf[2i+1]. display.current() returns the
 Display that owns it.
 
-The CLI stops FaleraOS with Ctrl-C but without the usual soft reset (a
+A FaleraOS with the live link (oreoOS/livelink.py) sends the frame while
+it keeps running: it copies the framebuffer right after presenting it
+and streams the copy (cli/oreo_cli/live.py). Otherwise the CLI stops
+FaleraOS with Ctrl-C but without the usual soft reset (a
 soft reset clears the heap, framebuffer included), reads the buffer as
 `@B:` lines, checks it with SHA-256 and writes a PNG here with the
 standard library only. FaleraOS is restarted afterwards like after any
@@ -86,7 +89,13 @@ def capture_code(chunk=PULL_CHUNK):
 def capture(b, attempts=2):
     """(width, height, RGB565 bytes, dirty) from the badge. Must be the
     first thing the session does: entering with a soft reset would have
-    cleared the framebuffer."""
+    cleared the framebuffer.
+
+    Over the live link (a LiveBadge) FaleraOS keeps running and copies the
+    frame it has just presented, so the picture is whole; `dirty` then
+    means the badge had no memory for a copy and sent the live buffer."""
+    if getattr(b, "live", False):
+        return b.screenshot(attempts)
     if b.entered:
         raise OreoError("the screen can only be read before anything else runs on the badge",
                         hint="run `falera screenshot` on its own")

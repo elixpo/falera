@@ -65,6 +65,9 @@ class App(oreoOS.App):
     author = "Circuit-Overtime"
     SHOW_LOADING = False
     BLOCK_IDLE = False               # set while a computer is connected
+    # This app reads the USB console itself: FaleraOS's live link
+    # (oreoOS.livelink) leaves the stream alone while it is open.
+    OWNS_USB_CONSOLE = True
 
     def on_enter(self, os_):
         super().on_enter(os_)

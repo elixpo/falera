@@ -236,11 +236,19 @@ def install_folder(ui, b, checked, force=False, verify=True):
             b.rm(p)
     if stale:
         ui.note("removed %d file(s) left from the previous install" % len(stale))
+    if getattr(b, "live", False):
+        # FaleraOS keeps running: have it forget the apps it listed.
+        b.apps_changed()
     ui.ok("installed %s to %s" % (esc(manifest.get("name") or aid), target))
     return aid, manifest
 
 
-def after_install(ui, name, reset):
+def after_install(ui, name, reset, live=False):
+    if live:
+        ui.ok("FaleraOS kept running; open %s from the Apps drawer" % esc(name))
+        ui.note("FaleraOS loads an app's code when it opens: if %s was open, leave it and "
+                "open it again. To try a change, run `falera app install` again" % esc(name))
+        return
     if reset == "none":
         ui.note("the badge is at the MicroPython prompt (--reset none); restart FaleraOS "
                 "(Ctrl-D there, or unplug and replug) to see %s in the Apps drawer" % esc(name))
@@ -262,22 +270,23 @@ def cmd_app(ctx):
     args = ctx.args
     ui = ctx.ui
     if args.action == "list":
-        with ctx.session() as b:
+        with ctx.session(live=True) as b:
             return apps_action(ui, b, "list")
     _app_target_required(args.action, args.target)
     if args.action == "remove":
         if posixpath.basename(args.target.rstrip("/")) != args.target:
             raise UsageError("give the app id, not a path", hint="falera app remove my_app")
-        with ctx.session() as b:
+        with ctx.session(live=True) as b:
             return apps_action(ui, b, "remove", args.target)
     # install: check the folder before the badge is touched
     checked = check_folder(ui, args.target)
     if checked[0] in SYSTEM_APPS and not args.force:
         refuse_builtin(checked[0])
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         aid, manifest = install_folder(ui, b, checked, force=args.force,
                                        verify=not args.no_verify)
-    after_install(ui, manifest.get("name") or aid, ctx.args.reset)
+        live = getattr(b, "live", False)
+    after_install(ui, manifest.get("name") or aid, ctx.args.reset, live=live)
     return 0
 
 

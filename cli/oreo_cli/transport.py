@@ -87,6 +87,12 @@ class SerialLink:
             raise LinkError(msg, hint=hint)
         return self
 
+    def raw_serial(self):
+        """The open pyserial port, for the live link (cli/oreo_cli/live.py),
+        which talks to a running FaleraOS without the raw REPL."""
+        self.open()
+        return self.t.serial
+
     def enter(self, soft_reset=True, attempts=2):
         """Interrupt FaleraOS and enter the raw REPL (soft reset: clean heap,
         main.py does not run while we are in the raw REPL).

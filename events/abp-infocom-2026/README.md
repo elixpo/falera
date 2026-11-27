@@ -6,6 +6,10 @@ For the JIS University stall at ABP Infocom 2026, Hyatt Regency, Kolkata,
 
 ![The poster](out/poster-a3-preview.png)
 
+The poster is **generic**: no event or university branding (no JIS University
+logo, no event name), so it can be reused at any event. The QR cards, the
+funding card and the pitch are generic too.
+
 ## Print files (`out/`)
 
 | File | What |

@@ -5,7 +5,7 @@ import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "falera CLI: control the FaleraOS badge over USB",
-  description: "Install falera-cli and use the falera command: the full-screen view, Transfer with the badge's code, files, apps, Wi-Fi, owner profile setup, FaleraOS updates, doctor, exit codes and troubleshooting.",
+  description: "Install falera-cli and use the falera command: live commands that run while FaleraOS keeps running, the full-screen view, Transfer with the badge's code, files, apps, Wi-Fi, owner profile setup, FaleraOS updates, doctor, exit codes and troubleshooting.",
   path: "/docs/cli/",
   keywords: ["falera CLI", "falera-cli", "Falera Badge USB", "FaleraOS update", "MicroPython badge CLI", "mpremote"],
   type: "article",
@@ -17,10 +17,11 @@ export default function CliDocsPage() {
       file="docs/CLI.md"
       chip="docs · falera CLI"
       title="The falera command-line tool."
-      lead="falera-cli controls the badge from a computer over USB: status, the Transfer app, files, apps, Wi-Fi, your profile, logs, a MicroPython shell and FaleraOS updates. It finds the badge by its USB ID, so you never guess a port name."
+      lead="falera-cli controls the badge from a computer over USB: status, the Transfer app, files, apps, Wi-Fi, your profile, logs, a MicroPython shell and FaleraOS updates. Typed commands are live: they run while FaleraOS keeps running, so the badge never restarts. The full-screen view and the numbered menu are not live yet: they pause FaleraOS while they are open. It finds the badge by its USB ID, so you never guess a port name."
       quickLinks={[
         { label: "Install", href: "#install" },
         { label: "First run", href: "#first-run" },
+        { label: "Live commands", href: "#how-falera-uses-the-badge" },
         { label: "Full-screen view", href: "#interactive-ui" },
         { label: "Commands", href: "#commands" },
         { label: "Transfer", href: "#falera-transfer-send-files-to-the-transfer-app" },

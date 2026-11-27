@@ -194,6 +194,11 @@ The CLI stores nothing else on the computer.
 
 ## Interactive UI
 
+> **Not live yet:** the full-screen view (and the numbered menu below) pauses
+> FaleraOS while it is open, then restarts it. Typed commands such as
+> `falera info`, `ls`, `push`, `screenshot`, `apps` and `setup` run while
+> FaleraOS keeps running ([how](#how-falera-uses-the-badge)).
+
 `falera` with no command (or `falera ui`) switches the terminal to a full-screen
 Falera view that handles everything about the badge. It opens at once, waits
 for a badge to be plugged in if there is none, and asks which one to use if
@@ -279,6 +284,8 @@ numbered menu below: when standard input or output is not a terminal, with
 back. To always get the menu, run `falera menu` or set `OREO_UI=menu`.
 
 ### The numbered menu
+
+Like the full-screen view, the menu pauses FaleraOS while it is open.
 
 `falera menu` (and `falera` where the full-screen view cannot run) shows the
 badge's status and then a menu:

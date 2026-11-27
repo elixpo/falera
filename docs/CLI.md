@@ -320,13 +320,26 @@ instead (see [`falera transfer`](#falera-transfer-send-files-to-the-transfer-app
   open the serial port.
 - **One badge is picked automatically.** If several are connected, choose
   one with `--port` or `$OREO_PORT` (see `falera devs`).
-- **Most commands pause FaleraOS and then restart it.** Such a command stops
-  FaleraOS, does its work and then soft-resets the badge so FaleraOS starts
-  again. `--reset hard` does a hardware reset instead, and `--reset none`
-  leaves the badge at the MicroPython prompt.
-- **Some commands do not stop FaleraOS.** `falera transfer` talks to the Transfer
-  app while it runs, and `falera logs` only listens.
-- **The badge's screen shows long operations.** While FaleraOS is paused for
+- **Most commands leave FaleraOS running.** `info`, `ls`, `push`, `pull`,
+  `rm`, `screenshot`, `add`, `apps`, `app install|list|remove`, `wifi` and
+  `setup` talk to the running FaleraOS over its **live link**
+  (`oreoOS/livelink.py`; [USB.md](USB.md#live-link-commands-while-faleraos-keeps-running)
+  has the protocol). The badge stays on its screen; a strip at the bottom
+  shows files being copied or an app installing. `falera transfer` talks
+  to the Transfer app, and `falera logs` only listens.
+- **An older FaleraOS is paused and restarted, as before.** When FaleraOS
+  does not answer the live link's hello (about two seconds; releases
+  before it), the command stops FaleraOS with Ctrl-C, works through the
+  MicroPython raw REPL and soft-resets the badge so FaleraOS starts again.
+  `--no-live` (or `OREO_NO_LIVE=1`) always takes this path; so does an
+  explicit `--reset`: `--reset soft` restarts FaleraOS, `--reset hard` does
+  a hardware reset, and `--reset none` leaves the badge at the MicroPython
+  prompt.
+- **Some commands always stop FaleraOS:** `update`, `flash`, `shell`, `run`,
+  `dev`, `doctor`, `logs --restart` and the full-screen view (`falera`,
+  `falera menu`) need the REPL or restart the badge anyway.
+- **The badge's screen shows long operations.** Over the live link FaleraOS
+  draws a progress strip at the bottom of its own screen. While FaleraOS is paused for
   `push`, `pull`, `add`, `app install`, `apps install`/`update` and
   `update`, the badge shows what is happening and how far it has got
   (through `oreoOS/hostui.py`, in FaleraOS versions that have it), and clears
@@ -345,7 +358,8 @@ Put these before the command, for example `falera --port /dev/ttyACM1 info`.
 | Option | Meaning |
 |---|---|
 | `-p`, `--port PORT` | Serial port to use (default: the one badge found; also `$OREO_PORT`) |
-| `--reset soft\|hard\|none` | How FaleraOS is restarted after a command (default `soft`) |
+| `--reset soft\|hard\|none` | Stop FaleraOS for the command (no live link) and restart it this way (default `soft` for commands that stop it) |
+| `--no-live` | Do not use the live link: stop FaleraOS and use the raw REPL, as for an older FaleraOS (also `$OREO_NO_LIVE=1`) |
 | `-y`, `--yes` | Answer yes to confirmations |
 | `--no-color` | Plain output |
 | `-v`, `--verbose` | Show the badge's log lines and full tracebacks |
@@ -358,16 +372,16 @@ Put these before the command, for example `falera --port /dev/ttyACM1 info`.
 | [`falera`](#interactive-ui) / `falera ui` | The full-screen Falera view | while it is open |
 | [`falera menu`](#the-numbered-menu) | The numbered menu, for simple terminals | while it is open |
 | [`falera devs`](#falera-devs-list-badges) | List badges | no (never opens a port) |
-| [`falera info`](#falera-info-status) | Versions, storage, Wi-Fi, battery | briefly |
+| [`falera info`](#falera-info-status) | Versions, storage, Wi-Fi, battery | no (older FaleraOS: briefly) |
 | [`falera transfer`](#falera-transfer-send-files-to-the-transfer-app) / `falera send` | Send files to the Transfer app, using the code on the badge | **no** |
-| [`falera add`](#falera-add-photos-videos-and-documents-without-the-transfer-app) | Send photos, videos and documents without opening an app | briefly |
-| [`falera ls` / `push` / `pull` / `rm`](#falera-ls--push--pull--rm-files) | Any file on the badge | briefly |
-| [`falera screenshot`](#falera-screenshot-the-screen-as-a-png) | Save the badge's screen as a PNG | briefly, then restarts |
-| [`falera apps`](#falera-apps-the-app-store) | App Store: list, install, update, remove | briefly |
-| [`falera setup`](#falera-setup-owner-profile) | Owner profile: GitHub user, name, timezone, weather | briefly, then restarts |
+| [`falera add`](#falera-add-photos-videos-and-documents-without-the-transfer-app) | Send photos, videos and documents without opening an app | no (older FaleraOS: briefly) |
+| [`falera ls` / `push` / `pull` / `rm`](#falera-ls--push--pull--rm-files) | Any file on the badge | no (older FaleraOS: briefly) |
+| [`falera screenshot`](#falera-screenshot-the-screen-as-a-png) | Save the badge's screen as a PNG | no (older FaleraOS: briefly, then restarts) |
+| [`falera apps`](#falera-apps-the-app-store) | App Store: list, install, update, remove | no (older FaleraOS: briefly) |
+| [`falera setup`](#falera-setup-owner-profile) | Owner profile: GitHub user, name, timezone, weather | no (older FaleraOS: briefly, then restarts) |
 | [`falera new`](#falera-new-start-an-app) | Make a new app folder from the app template | no (never opens a port) |
-| [`falera app`](#falera-app-install-an-app-from-a-folder) | Install, list or remove an app from a folder on this computer | briefly, then restarts |
-| [`falera wifi`](#wi-fi-setup) | Scan, connect, list and forget networks | briefly |
+| [`falera app`](#falera-app-install-an-app-from-a-folder) | Install, list or remove an app from a folder on this computer | no (older FaleraOS: briefly, then restarts) |
+| [`falera wifi`](#wi-fi-setup) | Scan, connect, list and forget networks | no (older FaleraOS: briefly) |
 | [`falera update`](#falera-update-update-faleraos) | Update FaleraOS (downloaded by the badge) | yes, then restarts |
 | [`falera logs`](#falera-logs-console-output) | Follow the console | no |
 | [`falera shell`](#falera-shell-micropython-repl) / [`run`](#falera-run-run-a-script) / [`dev`](#falera-dev-live-editing) | MicroPython prompt, scripts, live editing | while it runs |
@@ -542,6 +556,9 @@ falera rm -r /apps/myapp               # asks first
   a temporary `.part` file. The badge checks its size and SHA-256 and only
   then renames it into place, so a damaged copy leaves the old file
   untouched. `--no-verify` skips the hash.
+- Over the live link a pushed file under `/apps` makes FaleraOS list the
+  apps again; files under `/oreoOS`, `/oreoWare` or `/main.py` are used
+  after FaleraOS restarts (`falera --reset soft info` restarts it).
 - `push` copies files as they are. To make a photo or video viewable, use
   `falera transfer send` or `falera add`, which convert it first.
 - `rm` refuses FaleraOS's own files (`/oreoOS`, `/oreoWare`, `/assets`, the
@@ -568,7 +585,12 @@ falera screenshot docs/ --scale 2      # 640x480, into docs/
   320×240 framebuffer (big-endian RGB565, as sent to the panel) and widens
   each pixel to 8-bit RGB exactly (`r = r5 << 3 | r5 >> 2`, and so on).
   The PNG is written with the standard library only.
-- To keep that frame, the command stops FaleraOS with Ctrl-C but without the
+- Over the live link FaleraOS keeps running: it copies the framebuffer right
+  after presenting a frame and sends the copy, so the picture is a whole
+  frame of the screen as it is now, checked with SHA-256 and sent again
+  once if it was damaged.
+- On an older FaleraOS (or with `--no-live`), to keep that frame, the
+  command stops FaleraOS with Ctrl-C but without the
   usual soft reset (which would clear the framebuffer). The transfer is
   checked with SHA-256 and sent again once if it was damaged. FaleraOS
   restarts afterwards like after any other command.
@@ -649,9 +671,14 @@ No checkout or `.env.local` is needed.
   back and then renamed over `/profile.json`, so a cut-off save never leaves
   a half-written profile. If the power goes between removing the old file
   and the rename, FaleraOS reads the `.tmp` copy, and the next save repairs it.
-- FaleraOS restarts afterwards so the apps read the new profile (`--reset none`
-  leaves it at the MicroPython prompt). A new timezone applies at the next
-  time sync, which happens as FaleraOS starts.
+- Over the live link FaleraOS saves the file itself and reloads
+  `oreoOS.profile`, so it keeps running and apps read the new values the
+  next time they open (an app already on screen: leave it and open it
+  again). A new timezone starts a clock sync at once.
+- On an older FaleraOS (or with `--no-live` / `--reset`), FaleraOS restarts
+  afterwards so the apps read the new profile (`--reset none` leaves it at
+  the MicroPython prompt). A new timezone applies at the next time sync,
+  which happens as FaleraOS starts.
 
 **Your avatar.** After the profile, `falera setup` puts the GitHub avatar of
 `GITHUB_USER` on the badge for the Badge app. This computer downloads it
@@ -709,10 +736,13 @@ falera app remove my_game         # asks first
    (`--no-verify` skips the hash);
 4. removes files an earlier install left that are no longer in the folder.
    Saved data in `/state/<id>.json` stays;
-5. restarts FaleraOS, so the app is in the Apps drawer.
+5. over the live link, tells FaleraOS the apps changed, so the drawer lists
+   it at once while FaleraOS keeps running; on an older FaleraOS, restarts
+   FaleraOS.
 
-FaleraOS imports an app once per boot, so to try a change run
-`falera app install` again: FaleraOS restarts and loads the new code.
+FaleraOS loads an app's code when the app opens and unloads it when it
+closes, so to try a change run `falera app install` again and reopen the
+app (on an older FaleraOS the restart loads the new code).
 
 `list` and `remove` are the same as `falera apps list` and `falera apps remove`.
 

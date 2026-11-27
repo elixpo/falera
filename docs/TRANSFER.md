@@ -117,8 +117,8 @@ See [AUDIO.md](AUDIO.md#music) for the Music app.
 
 While it is open, Transfer reads the USB console, and other `falera` commands
 cannot pause FaleraOS. Leave Transfer (**HOME**) before running `falera info`,
-`falera add`, `falera shell`, `falera update` and the rest; otherwise they fail with
-"the badge did not answer". `falera logs` still works, and shows the app's
+`falera add`, `falera shell`, `falera update` and the rest; otherwise they stop and say
+that Transfer is open (older falera-cli: "the badge did not answer"). `falera logs` still works, and shows the app's
 `@OTB` lines.
 
 ## For developers

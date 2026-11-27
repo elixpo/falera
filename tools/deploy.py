@@ -190,6 +190,7 @@ DEPLOY = [
     ("oreoOS/opening.py",       "oreoOS/opening.py"),   # feedback while an app opens
     ("oreoOS/hostui.py",        "oreoOS/hostui.py"),    # screen while the CLI drives
     ("oreoOS/usbhost.py",       "oreoOS/usbhost.py"),   # is a computer on USB?
+    ("oreoOS/livelink.py",      "oreoOS/livelink.py"),  # falera commands while FaleraOS runs
     ("oreoOS/player.py",        "oreoOS/player.py"),    # MP3 streams (audio apps)
     ("oreoOS/mediaui.py",       "oreoOS/mediaui.py"),   # audio apps' shared screens
     ("oreoOS/konami.py",        "oreoOS/konami.py"),    # the name card's easter egg (Badge)

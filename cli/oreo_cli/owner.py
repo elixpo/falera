@@ -188,6 +188,8 @@ def _read_code():
 def read(b):
     """{'file': {...} or None, 'state': ok|tmp|missing|bad, 'secrets': {...}}
     with the OWM key replaced by True when it is set."""
+    if getattr(b, "live", False):
+        return b.profile_read(list(KEYS) + list(ALIASES), SECRET)
     return b.result(_read_code())
 
 
@@ -256,6 +258,11 @@ def write(b, updates):
             raise UsageError("unknown profile key: %s" % k)
     secret = updates.get(SECRET)
     try:
+        if getattr(b, "live", False):
+            # merged and saved by FaleraOS itself, which reloads oreoOS.profile
+            r = b.profile_write(_with_aliases_cleared(updates))
+            b.profile_live = r
+            return r.get("keys") or []
         r = b.result(_write_code(_with_aliases_cleared(updates)),
                      secrets=(secret,) if secret else ())
     except BadgeError as e:
@@ -490,11 +497,26 @@ def _avatar_owner_code():
 def avatar_owner(b):
     """(exists, login) of /avatar.bin on the badge; login is None when the
     file is missing or not an avatar file. Reads only its header."""
+    if getattr(b, "live", False):
+        head = b.read_head(avatar.PATH, avatar.HEADER + 255)
+        if head is None:
+            return False, None
+        user = None
+        if head[:len(avatar.MAGIC)] == avatar.MAGIC and len(head) >= avatar.HEADER:
+            n = head[avatar.HEADER - 1]
+            try:
+                user = head[avatar.HEADER:avatar.HEADER + n].decode("ascii")
+            except UnicodeDecodeError:
+                user = None
+        return True, user
     r = b.result(_avatar_owner_code())
     return bool(r.get("exists")), r.get("user")
 
 
 def _remove_avatar(b):
+    if getattr(b, "live", False):
+        b.remove_quiet(avatar.PATH)
+        return
     b.result("import os\ntry:\n os.remove(%s)\nexcept OSError:\n pass\n_e({'ok':1})\n"
              % lit(avatar.PATH))
 
@@ -590,7 +612,14 @@ def setup(ui, b, updates=None, show_only=False, avatar_mode=AVATAR_AUTO):
 
 # ── the command ──────────────────────────────────────────────────────
 
-def after_save(ui, reset):
+def after_save(ui, reset, live=None):
+    if live is not None:
+        ui.ok("FaleraOS kept running and reads the new profile now")
+        ui.note("an app already open shows it the next time it opens (or after `falera "
+                "--reset soft setup --show`, which restarts FaleraOS)")
+        if live.get("time_sync"):
+            ui.note("the new timezone applies after the clock sync FaleraOS just started")
+        return
     if reset == "none":
         ui.note("the badge is at the MicroPython prompt (--reset none); restart FaleraOS "
                 "(Ctrl-D there, or unplug and replug) so the apps read the new profile")
@@ -627,10 +656,11 @@ def cmd_setup(ctx):
                               "octocat --timezone 5.5 (see `falera help setup`)")
     mode = AVATAR_REFRESH if refresh else AVATAR_SKIP if skip else AVATAR_AUTO
     ui.header("setup", "owner profile in %s (docs/PROFILE.md)" % PATH)
-    with ctx.session() as b:
+    with ctx.session(live=True) as b:
         # --avatar alone refreshes the avatar without asking for the profile
         changed = setup(ui, b, updates=updates if (updates or refresh) else None,
                         show_only=args.show, avatar_mode=mode)
+        live = (getattr(b, "profile_live", None) or {}) if getattr(b, "live", False) else None
     if changed:
-        after_save(ui, ctx.args.reset)
+        after_save(ui, ctx.args.reset, live=live)
     return 0

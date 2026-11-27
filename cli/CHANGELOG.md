@@ -12,6 +12,19 @@ from its `## [<version>]` section below, so every release needs one.
 
 ### Added
 
+- **Live link: commands no longer restart the badge.** With a FaleraOS that
+  has `oreoOS/livelink.py`, `info`, `ls`, `push`, `pull`, `rm`,
+  `screenshot`, `add`, `apps`, `app install|list|remove`, `wifi` and
+  `setup` are answered by the running FaleraOS over the USB console
+  (`#@OLH`/`#@OLD` requests, `@OLB`/`@OLD` replies, protocol v1; see
+  docs/USB.md). FaleraOS stays on screen and shows a progress strip while
+  files copy or apps install; screenshots are copies of a whole presented
+  frame; the profile is reloaded without a restart. When the badge does not
+  answer the hello (an older FaleraOS) the CLI uses the raw REPL as before.
+  `--no-live` (or `OREO_NO_LIVE=1`) and an explicit `--reset` force the old
+  path. While the Transfer app is open, commands now say to leave it instead
+  of failing with "the badge did not answer".
+
 - **`falera screenshot [FILE] [--scale N]`**: saves the badge's screen as a
   PNG, pixel for pixel. It reads the frame FaleraOS last drew from its
   framebuffer (`oreoWare.display.current()`, big-endian RGB565), checks it

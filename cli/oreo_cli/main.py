@@ -49,7 +49,8 @@ HELP = {
     "screenshot": ("Save the badge's screen as a PNG",
                    "Reads the frame FaleraOS last drew, pixel for pixel, and saves it as\n"
                    "a PNG on this computer (320x240; --scale enlarges it without\n"
-                   "smoothing). FaleraOS restarts after. Works on released FaleraOS\n"
+                   "smoothing). FaleraOS keeps running (live link); an older FaleraOS\n"
+                   "is paused and restarts after. Works on released FaleraOS\n"
                    "versions too (through oreoOS.busy when display.current() is missing).\n\n"
                    "  falera screenshot                  falera-screenshot-<date>-<time>.png here\n"
                    "  falera screenshot home.png\n"
@@ -138,7 +139,8 @@ HELP = {
               "Commits, Weather and the clock read (docs/PROFILE.md).\n"
               "No .env.local or checkout needed. Values given as options are saved\n"
               "without prompting. The OpenWeatherMap key is asked without echo and\n"
-              "never shown; an empty value removes a key. FaleraOS restarts after.\n"
+              "never shown; an empty value removes a key. FaleraOS keeps running\n"
+              "and reloads the profile (an older FaleraOS restarts after).\n"
               "It also copies GITHUB_USER's GitHub avatar to /avatar.bin for the\n"
               "Badge app: downloaded and converted on this computer, only when it\n"
               "is missing or made for another user (--avatar fetches it again).\n\n"
@@ -166,8 +168,8 @@ HELP = {
             "install checks the folder with the same rules as the repo's\n"
             "tools/validate_app.py, copies the files that belong on the badge\n"
             "to /apps/<id>/ (each one checked with SHA-256), removes files an\n"
-            "earlier install left behind, and restarts FaleraOS so the Apps drawer\n"
-            "lists it. Built-in apps are not replaced without --force.\n"
+            "earlier install left behind, and has FaleraOS list the apps again\n"
+            "(an older FaleraOS restarts). Built-in apps are not replaced without --force.\n"
             "Saved data (/state/<id>.json) stays. Store apps: `falera apps`.\n\n"
             "  falera app install ./my_game\n"
             "  falera app list\n"
@@ -203,6 +205,16 @@ def _sub(subs, name, **kw):
                            formatter_class=Formatter, **kw)
 
 
+class _ResetAction(argparse.Action):
+    """--reset given on the command line asks for the old path (stop
+    FaleraOS, restart it that way); without it commands use the live link
+    when the badge has one (args.reset_explicit)."""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+        namespace.reset_explicit = True
+
+
 def build_parser():
     p = argparse.ArgumentParser(
         prog="falera", formatter_class=Formatter,
@@ -216,10 +228,17 @@ def build_parser():
     p.add_argument("--version", action="version", version="falera-cli " + __version__)
     p.add_argument("-p", "--port", help="serial port (default: the one badge found; $OREO_PORT)")
     p.add_argument("--reset", choices=("soft", "hard", "none"), default="soft",
-                   help="how to restart FaleraOS after a command (default: soft)")
+                   action=_ResetAction,
+                   help="stop FaleraOS for the command and restart it this way afterwards "
+                        "(default: soft, for commands that stop it)")
+    p.add_argument("--no-live", action="store_true",
+                   help="do not use the live link: stop FaleraOS and use the raw REPL, "
+                        "as for an older FaleraOS ($OREO_NO_LIVE=1)")
     p.add_argument("-y", "--yes", action="store_true", help="answer yes to confirmations")
     p.add_argument("--no-color", action="store_true", help="plain output")
     p.add_argument("-v", "--verbose", action="store_true", help="show the badge's log lines")
+
+    p.set_defaults(reset_explicit=False)
 
     subs = p.add_subparsers(dest="cmd", metavar="<command>")
 
@@ -381,12 +400,43 @@ class Ctx:
         on_text = (lambda s: self.ui.note("badge: " + esc(s))) if self.args.verbose else None
         return Badge(self.link(port or self.port()), on_text=on_text)
 
-    @contextlib.contextmanager
-    def session(self, reset=None):
-        """A connected badge; FaleraOS is restarted on the way out."""
-        port = self.port()
-        b = self.badge(port)
+    def live_allowed(self):
+        """The live link may be tried: no --no-live, no explicit --reset."""
+        return not (getattr(self.args, "no_live", False)
+                    or getattr(self.args, "reset_explicit", False))
+
+    def open_badge(self, port, live=False):
+        """A LiveBadge when `live` is wanted and FaleraOS answers the live
+        link's hello (FaleraOS keeps running), else a Badge for the raw
+        REPL on the same, already open port."""
+        b = None
+        link = self.link(port)
+        if live and self.live_allowed():
+            from . import live as live_mod
+            on_text = (lambda s: self.ui.note("badge: " + esc(s))) if self.args.verbose else None
+            b = live_mod.connect(link, ui=self.ui if self.args.verbose else None,
+                                 clock=self.monotonic, sleep=self.sleep)
+            if b is not None:
+                b.on_text = on_text
+                if self.args.verbose:
+                    self.ui.note("live link v%s: FaleraOS %s keeps running"
+                                 % (b.hello.get("v"), b.os_version or "?"))
+            elif self.args.verbose and getattr(link, "raw_serial", None) is not None:
+                self.ui.note("no live link on the badge: stopping FaleraOS (raw REPL)")
+        if b is None:
+            on_text = (lambda s: self.ui.note("badge: " + esc(s))) if self.args.verbose else None
+            b = Badge(link, on_text=on_text)
         b.port = port
+        return b
+
+    @contextlib.contextmanager
+    def session(self, reset=None, live=False):
+        """A connected badge. live=True: the command can run over the live
+        link, and FaleraOS keeps running when the badge supports it;
+        otherwise (or with --no-live / --reset) FaleraOS is stopped and
+        restarted on the way out."""
+        port = self.port()
+        b = self.open_badge(port, live=live and reset is None)
         try:
             yield b
         finally:
@@ -468,6 +518,8 @@ def main(argv=None, ui=None, comports=None, link_factory=None, runner=None,
     parser = build_parser()
     argv = sys.argv[1:] if argv is None else list(argv)
     args = parser.parse_args(argv)
+    if os.environ.get("OREO_NO_LIVE", "").strip().lower() in ("1", "yes", "true", "on"):
+        args.no_live = True
     if ui is None:
         ui = UI(color=not args.no_color, assume_yes=args.yes)
     else:

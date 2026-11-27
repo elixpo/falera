@@ -100,6 +100,7 @@ SHIP_PATTERNS = [
     "oreoOS/opening.py",
     "oreoOS/hostui.py",
     "oreoOS/usbhost.py",
+    "oreoOS/livelink.py",
     "oreoOS/player.py",
     "oreoOS/konami.py",
     "oreoOS/mediaui.py",

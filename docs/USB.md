@@ -220,6 +220,73 @@ falera rm /documents/old.mdz
 
 `falera rm` refuses FaleraOS's own files unless you add `--force`.
 
+## Live link: commands while FaleraOS keeps running
+
+From FaleraOS with `oreoOS/livelink.py` (the release after this change),
+`falera info`, `ls`, `push`, `pull`, `rm`, `screenshot`, `add`, `apps`,
+`app install|list|remove`, `wifi` and `setup` no longer stop FaleraOS: the
+running OS answers them itself and the badge stays on its current screen.
+While files are copied or an app installs, a thin strip at the bottom of
+the screen shows what the computer is doing. With an older FaleraOS the CLI
+notices that nothing answers and uses the raw REPL as before (FaleraOS
+stops and restarts). `--no-live` (or `OREO_NO_LIVE=1`), or an explicit
+`--reset soft|hard|none`, forces that old path.
+
+`update`, `flash`, `dev`, `run`, `shell`, `logs --restart`, `doctor` and the
+full-screen view still stop FaleraOS: they need the REPL, or restart the
+badge anyway.
+
+**How it works.** The USB serial console is one stream. Once per frame
+FaleraOS reads whatever the computer sent, for a few milliseconds at most
+(`select.poll()` before each byte, so it never waits), and keeps only lines
+that start with its prefix:
+
+| Direction | Line | Meaning |
+|---|---|---|
+| computer to badge | `#@OLH {json}` | A request: `op`, `id` and its fields |
+| computer to badge | `#@OLD <seq> <base64>` | A chunk of a file being pushed (1536 bytes) |
+| badge to computer | `@OLB {json}` | A reply, a progress event or an error, with the request's `id` |
+| badge to computer | `@OLD <seq> <base64>` | A chunk of a file or of the screen (3072 bytes) |
+
+The first request is `hello {v}`; the badge answers with its protocol
+version, FaleraOS version and the requests it knows (`ops`). A different
+version, or no answer within about two seconds, makes the CLI use the raw
+REPL. Requests: `info`, `stat`, `ls`, `free`, `mkdirs`, `read` (a file's
+first bytes), `get`, `put`, `sha256`, `rm`, `screen`, `wifi_status`,
+`wifi_scan`, `wifi_connect`, `wifi_saved`, `wifi_save`, `wifi_forget`,
+`wifi_online`, `apps`, `apps_refresh`, `app_install`, `app_remove`,
+`apps_changed`, `profile_read`, `profile_write`, plus `ping`, `abort` and
+`bye`. One request runs at a time. The protocol version is
+`oreoOS/livelink.py` `VERSION` (and `cli/oreo_cli/live.py` `PROTOCOL`); any
+change on the wire bumps it.
+
+- **Nothing blocks the screen.** Storage scans, hashing, recursive deletes
+  and App Store downloads run on a worker thread; Wi-Fi scans and joins use
+  the driver's non-blocking calls; files and the screen go out a few lines
+  per frame. Pushed files are written to `<name>.part`, checked (size and
+  SHA-256) and only then renamed into place.
+- **Screenshots are whole frames.** FaleraOS copies the framebuffer right
+  after presenting a frame and sends the copy.
+- **Ctrl-C still works.** The live link never turns Ctrl-C off, and no
+  protocol line contains byte `0x03`. A Ctrl-C from `mpremote`, `falera
+  shell` or the CLI's fallback stops FaleraOS and gives the REPL as always;
+  because FaleraOS now reads the console every frame, a Ctrl-C is never
+  stuck behind unread bytes. Every computer line starts with `#`, so a line
+  that reaches the REPL instead (an older FaleraOS, or FaleraOS stopped) is
+  a Python comment there and does nothing.
+- **The Transfer app** reads the console itself while it is open, and the
+  live link steps aside. `falera` then says to leave Transfer first.
+- **A sleeping badge wakes** when a request arrives.
+- **What changes take effect at once:** the profile (FaleraOS reloads
+  `oreoOS.profile`; an app that is already open shows it the next time it
+  opens, and a new timezone starts a clock sync), apps installed or removed
+  (the drawer lists them again). Files pushed into `/oreoOS`, `/oreoWare`
+  or `/main.py` are used after FaleraOS restarts (`falera --reset soft info`).
+
+**Trust.** The live link listens only on the USB cable. Anyone holding the
+cable can already open the REPL, so it gives nobody new power. Nothing
+listens on Wi-Fi or Bluetooth; Wi-Fi stays for the internet only.
+
 ## Advanced: raw `mpremote`
 
 falera-cli is built on `mpremote` and covers everything below with safer

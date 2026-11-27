@@ -104,8 +104,20 @@ class PowerManager:
         # Safety ceiling: 24 h so a wedged pin can't strand us forever.
         deadline = time.ticks_add(time.ticks_ms(), 24 * 60 * 60 * 1000)
 
+        # A `falera` command arriving over USB wakes the badge too, so the
+        # live link (oreoOS.livelink) answers it instead of the CLI falling
+        # back to stopping FaleraOS.
+        usb_waiting = None
+        try:
+            from oreoOS import livelink
+            usb_waiting = livelink.pending
+        except Exception:
+            usb_waiting = None
+
         while True:
             if set(pressed()) - initial_btn:
+                break
+            if usb_waiting is not None and usb_waiting():
                 break
             if time.ticks_diff(deadline, time.ticks_ms()) <= 0:
                 break

@@ -125,7 +125,7 @@ CLI command.
 
 2.5. **The OS and the CLI ship together and must agree.** A change on one side
 of a contract (profile keys, built-in apps, app checks, app template,
-Transfer protocol, the "connected to computer" screen, USB identity
+Transfer protocol, the live link, the "connected to computer" screen, USB identity
 `303a:83ec`) changes the other side, its tests and its docs in the same pull
 request. A newer CLI must keep working with the previous OS release.
 

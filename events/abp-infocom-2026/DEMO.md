@@ -41,7 +41,13 @@ laptop shows the stall screen; the badge does the talking.
      `falera transfer send ~/Documents/falera-pitch/demo/star-falera-live.png --photo-max 320`
      (a 320×240 "Star Falera" card with a QR code people can scan straight
      off the badge; `--photo-max 320` keeps it full screen).
-4. **Badge:** on the home screen, Wi-Fi connected. Preloaded the night
+4. **Badge:** on the home screen, Wi-Fi connected to the phone hotspot.
+   **Flappy Lumi is NOT installed** (it's installed live in step 4, from the
+   badge's own App Store). The night before: check with `falera apps`,
+   remove it on the badge (App Store → Installed → Flappy Lumi → remove) or
+   with `falera --no-live apps remove flappy`, do one test install from the
+   badge over the hotspot, then remove it again. After every demo, remove it
+   again for the next visitor. Preloaded the night
    before, as backups that are already on the badge if anything fails:
    ```bash
    falera add ~/Documents/falera-pitch/demo/star-falera-card.png --photo-max 320
@@ -71,7 +77,7 @@ laptop shows the stall screen; the badge does the talking.
 | 1 | "This is a **computer you can wear round your neck**." | Hand it over, on the home screen | Tab 1, view **1** |
 | 2 | **Why:** "Every event gives you a badge, and you throw it away in two days. We wanted one you keep, that does something, and that anyone can build for." | | view 1 |
 | 3 | **Three parts:** "It's built like a real computer. At the bottom, **a kernel**: MicroPython firmware on the ESP32-S3, with our drivers. On top, **FaleraOS**, the operating system I wrote: the home screen, an App Store, updates over the air. And on top of that, **apps anyone can write** in Python." | | press **2** |
-| 4 | **Examples:** "Here's the App Store… a game… and your GitHub card. It also updates itself over the air, like your phone, and talks infrared, to other badges and like a TV remote." | Open the App Store, then a game (Racer or Flappy Lumi), then the Badge app | press **3** |
+| 4 | **Examples:** "Here's the App Store. Watch: it's downloading this game over Wi-Fi by itself, no computer… and there it is. It also updates itself over the air, like your phone, and talks infrared, to other badges and like a TV remote. And here's your GitHub card." | App Store → Discover → **Flappy Lumi** → Install; open it and hand the badge over (A flaps); then the Badge app | press **3** |
 | 5 | **Remote control:** "And your computer talks to it over USB, while it keeps running. Watch: I'll send it a picture." | Open **Transfer**; read the code on the screen aloud | Terminal: run the transfer, type the code; point at the live log on the left |
 | 6 | "…and there it is. Scan it, it takes you to the code." | The "Star Falera" card arrives; open it in the Gallery and let them scan its QR | |
 | 7 | **The paper:** "Video was the hard part: this chip managed half a frame a second. So I invented a format, RV565, that sends only what changed. It's a research paper now." | | press **4** |
@@ -172,4 +178,5 @@ Then hand over a QR card and go back to view 1.
 | A `falera` command acts oddly | Run it again as `falera --no-live <command>` (the old, proven path; the badge pauses for a few seconds). |
 | Someone asks to send a big file or video | Explain it works but is slow for big files right now (#237); show the preloaded video instead. |
 | No Wi-Fi at the venue | Skip the App Store install; everything else works offline. Phone hotspot is saved. |
+| The Flappy Lumi install fails or stalls | Back out (B), open a game that's already installed (Racer, Patakha or Snake) and carry on; check the hotspot afterwards. |
 | The badge won't start | Switch to tab 3 (the 3D board) and do the demo from the poster. |

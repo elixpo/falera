@@ -22,6 +22,76 @@ schematic, `elixpo.kicad_sch`, links five sheets:
 5. MAX98357A speaker amp, MPU-6050, microSD, infrared, status LED, Qwiic and the
    J6 expansion header.
 
+The renders, and the 3D model on the website's badge page
+(`falera.elixpo/public/models/falera-badge.glb`), come from
+`python3 circuit/elixpo/render_board.py`. They use the board stackup colours:
+black mask, white silkscreen, HASL. The first five boards were made before the
+rename, so their silkscreen still says OREO BADGE and oreo.elixpo.com; the
+design files now say FALERA BADGE, falera.elixpo.com and
+github.com/elixpo/falera.
+
+They show the badge as it is worn: the display module on its header, a name
+card on the front, the lanyard through the slots and the battery on the back.
+
+- **Display module:** J3 (the header socket) carries a second 3D model,
+  `3d/MSP2807.step`, made by `3d/make_msp2807_model.py` from LCDwiki's
+  MSP2807 outline drawing (V1.0): red 50 x 86 x 1.6 mm PCB with its four
+  3.2 mm holes, the 50 x 69.2 mm panel (0.5 mm tape, 2.3 mm LCD and
+  backlight, 1.2 mm touch panel, 5.6 mm in all), the 43.2 x 57.6 mm active
+  area, and the 14-pin header (2.54 mm plastic, pins 8.38 mm behind the PCB).
+  Its origin is header pin 1 on the PCB's back face, and its offset is
+  11 mm, the M3 standoffs. The microSD socket and SMD parts on the module's
+  back are not modelled.
+- **Name card:** a 0.3 mm photo-paper sheet cut to
+  `circuit/card/name-card/template/name-card-mask.svg` (slots, IR notch), with
+  its top-left corner on the board's. Its top edge rests on the board (the
+  lanyard holds it there) and its 15 mm fold-back tab, folded under it along
+  the fold line, stands straight down to the board and props the lower end
+  up: the face tilts 14.3 degrees, its lower edge 15.0 mm above the board at
+  board y 87.7, 1.6 mm below the display's face and 2.3 mm short of the
+  module. It clears everything under it (closest: D2, 1.1 mm). Its picture
+  is the person's card, `circuit/card/name-card/cards/<handle>.html`, printed
+  by headless Chromium: the top 59.5 mm on the face, the bottom 15 mm on the
+  tab's printed side.
+- **Lanyard:** the 12 mm, 1 mm strap printed with
+  `circuit/card/lanyard/lanyard-print-<theme>.svg`. Each end goes into its
+  slot from the front, round the bar above the slot and back up behind the
+  board, where it lies against the strap and is sewn; artwork x = 25 mm
+  leaves the slot on the front. Above the badge the two sides turn 11 degrees
+  in and stop 100 mm along the strap from the slot.
+- **Battery:** on the back, a 6 x 34 x 50 mm 603450 pouch (rounded plan
+  corners and edges) on the silkscreen outline (board x 60-110, y 104-138),
+  with its lead plugged into J2, and the L-shaped holder: its foot on the
+  solid outline below the cell (y 138.3-142.3, through H5-H6), its wall as
+  tall as the cell and its lip reaching 11 mm over it. No holder design file
+  exists yet, so its 1.5 mm wall thickness is assumed. Nothing on the back
+  sits under the cell or the holder.
+- **Buttons:** the TS665CJ switches are 5.0 mm tall to the plunger; KiCad's
+  SW_PUSH_6mm model is 4.3 mm, so the eight models are stretched to 5.0 mm
+  (scale z 1.1628, also set by `generate_badge_pcb.py`).
+
+```
+python3 circuit/elixpo/render_board.py                      # renders and GLB
+python3 circuit/elixpo/render_board.py --renders            # renders only
+python3 circuit/elixpo/render_board.py --glb                # GLB only
+    --card HANDLE         whose card (default Circuit-Overtime)
+    --no-card             no card
+    --lanyard-theme NAME  paper, butter, blush or bamboo (default: the card
+                          owner's theme in circuit/card/name-card/people.json)
+    --no-lanyard          no lanyard
+    --no-battery          no battery and holder on the back
+```
+
+The card, the lanyard and the battery are not KiCad parts. In the GLB they
+are meshes (the card and the strap textured) added to KiCad's export. For
+the renders, which kicad-cli cannot texture, they are VRML models made of
+0.1 mm (card) and 0.125 mm (strap) cells, one colour each (the battery in
+plain colours), hung on G1 in a temporary copy of the board. The card and
+the lanyard need a headless Chromium (`CHROME`, or Playwright's headless
+shell) and `pdftoppm`. The badge page's viewer turns about the badge's own
+centre (`camera-target` in `falera.elixpo/src/components/BoardViewer.tsx`),
+so the straps do not pull it off centre.
+
 Run `./circuit/elixpo/build.sh` from any directory to regenerate the design and
 produce the ERC report, PDF and KiCad-native BOM under `circuit/elixpo/build/`.
 
@@ -108,6 +178,19 @@ Settings > Touch calibrates it by tapping four targets and saves the result.
 
 - Check the display module's header order against J3, and the battery
   lead's polarity against J2.
+- Check the module's mounting holes against H1-H4. LCDwiki's MSP2807
+  drawing (V1.0) puts them 76.08 mm apart along the module; the board's are
+  78.08 mm apart (H3 and H4 at x 122.08), so by the drawing the module's
+  header-end holes sit 2 mm short of H3 and H4. The 3D model follows the
+  drawing, so the renders show the offset.
+- UP (SW11) is hard to press: its plunger is 5.0 mm up, 11.6 mm below the
+  screen face, with its centre 3.9 mm from the module's edge under the
+  module's 6 mm overhang (11 mm standoffs). An adult fingertip only catches
+  it at an angle. Version 2 fixes it by making the board 10 mm longer,
+  added below the screen: the D-pad moves clear of the module, and the room
+  also takes the aux jack and the RTC and fuel gauge coming back. The card
+  template and the lanyard slots don't change, since the length goes below
+  the screen.
 - Confirm the selected LiPo capacity, protection board and maximum permitted
   charge current (#156).
 - Review the ESP32-S3 RF layout against Espressif's current hardware guide;

@@ -126,8 +126,11 @@ WiFi, and fun to hack. These items close the gap.
       heap with verification on), then test Updates and the App Store with
       Wi-Fi, after a power cycle (clock unset) and on a network that
       blocks NTP.
-- [ ] 🤖 Sign OTA bundles, so an update is trusted even if TLS is bypassed
-      (#110 follow-up).
+- [ ] **Reserved for an outside contributor:** update trust for OTA and the
+      App Store (signed metadata, expiry, key rotation and an on-badge
+      verifier), so an update is trusted even if TLS is bypassed (#110
+      follow-up). Proposed as a Google Summer of Code 2027 idea in #225;
+      maintainers won't build it before then.
 - [x] 🤖 **OpenSSF Scorecard** workflow and badge
       ([falera#74](https://github.com/elixpo/falera/pull/74)).
 - [x] 🙋 **OpenSSF Best Practices** badge: **passing**

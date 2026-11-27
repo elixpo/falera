@@ -45,13 +45,24 @@ laptop shows the stall screen; the badge does the talking.
    before, as backups that are already on the badge if anything fails:
    ```bash
    falera add ~/Documents/falera-pitch/demo/star-falera-card.png --photo-max 320
-   falera add ~/Videos/bbb-90.mp4 --seconds 10
+   falera add ~/Videos/bbb-90.mp4 --seconds 7
    ```
-   The live send uses a second copy (`star-falera-live.png`), so it never
-   clashes with the preloaded one.
+   7 seconds is the most that fits the Gallery's media budget (4.4 MB). The
+   live send uses a second copy (`star-falera-live.png`), so it never clashes
+   with the preloaded one.
 
-Use only `falera transfer` and `falera logs` at the stall: every other
-command restarts the badge for a few seconds.
+**At the stall:**
+
+- **Show the USB transfer with the photo only** (step 5): a 23 KB picture
+  takes a second or two. **The video stays preloaded**: big files are slow
+  to push over the live link (4.9 kB/s, about 15 minutes for the clip;
+  issue #237), so never send it live.
+- Stick to `falera transfer` and `falera logs` during the demo. Since the
+  27 November flash the other commands (`info`, `ls`, `screenshot`, `apps`…)
+  also run without restarting the badge (the live link), but they are new
+  on hardware: keep them out of the demo.
+- If a command misbehaves, `falera --no-live <command>` uses the old path
+  (it pauses FaleraOS for a few seconds, but it's proven).
 
 ## The run
 
@@ -110,8 +121,13 @@ Then hand over a QR card and go back to view 1.
   listens on the local network. Bluetooth features come later.
 - **The CLI:** `falera` (falera-cli 1.1.0, ~8,000 lines of Python): files,
   apps, setup, screenshots, and the Transfer app (you type the code the
-  badge shows). A version where every command runs while FaleraOS keeps
-  running is merged and coming in the next release; it isn't on this badge.
+  badge shows). **On this badge, commands run while FaleraOS keeps running**
+  (the live link, merged on 27 November): the badge doesn't restart for
+  each command. Big file pushes are still slow (about 5 kB/s; being fixed,
+  #237). The full-screen CLI view still pauses FaleraOS.
+- **The boot splash:** it says FaleraOS. On this badge's firmware it shows
+  still with a moving loading bar; newer firmware plays the rolling "hello"
+  in many languages on the chip's second core, so it never stutters.
 - **Tested without hardware:** over **750 automated tests** run on a
   computer, standing in for the badge.
 - **Licences:** code **MIT**, hardware **CERN-OHL-P** (certified by OSHWA,
@@ -153,5 +169,7 @@ Then hand over a QR card and go back to view 1.
 | --- | --- |
 | Transfer says the badge didn't answer | Is the Transfer app open with a code on screen? Leave it (HOME), open it again, retry. If it still fails, open the **preloaded** "Star Falera" card in the Gallery instead and carry on. |
 | The badge hangs | Press RESET; it boots in a few seconds. Keep talking over view 2. |
+| A `falera` command acts oddly | Run it again as `falera --no-live <command>` (the old, proven path; the badge pauses for a few seconds). |
+| Someone asks to send a big file or video | Explain it works but is slow for big files right now (#237); show the preloaded video instead. |
 | No Wi-Fi at the venue | Skip the App Store install; everything else works offline. Phone hotspot is saved. |
 | The badge won't start | Switch to tab 3 (the 3D board) and do the demo from the poster. |

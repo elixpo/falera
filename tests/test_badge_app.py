@@ -145,6 +145,7 @@ def build_env(real_fonts):
     api = types.ModuleType("oreoOS.api")
     api.SCREEN_W, api.SCREEN_H = SW, SH
     api.BTN_A = 1
+    api.BTN_B, api.BTN_UP, api.BTN_DOWN, api.BTN_LEFT, api.BTN_RIGHT = 2, 3, 4, 5, 6
     api.WHITE = (255, 255, 255)
     api.BLACK = (0, 0, 0)
     api.rgb = lambda r, g, b: (r, g, b)
@@ -185,6 +186,8 @@ def build_env(real_fonts):
                                                       "badge_t_github")
         pkg.profile = modules["oreoOS.profile"] = _load("oreoOS/profile.py",
                                                         "badge_t_profile")
+        pkg.konami = modules["oreoOS.konami"] = _load("oreoOS/konami.py",
+                                                      "badge_t_konami")
         if real_fonts:
             if str(ROOT) not in sys.path:
                 sys.path.insert(0, str(ROOT))

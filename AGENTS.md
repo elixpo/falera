@@ -65,6 +65,7 @@ Keep both sides, their tests and their docs in step:
 | App checks | `tools/validate_app.py` | `cli/oreo_cli/appcheck.py` | drift test |
 | App template | `app_templates/` | `cli/oreo_cli/app_template/` | CLI test |
 | Transfer protocol (`VERSION`) | `apps/transfer/src/proto.py` | `cli/oreo_cli/transfer.py` | protocol tests on both sides; bump `VERSION` on any wire change |
+| Live link (`VERSION`): `#@OLH`/`#@OLD` requests, `@OLB`/`@OLD` replies; `falera` commands answered by a running FaleraOS | `oreoOS/livelink.py` (ticked by `oreoOS/launcher.py`; Transfer sets `OWNS_USB_CONSOLE`) | `cli/oreo_cli/live.py` (`Ctx.session(live=True)`, raw REPL fallback) | `tests/test_livelink.py`; `cli/tests/test_live.py` runs the CLI against `livelink.py`, incl. the fallback; bump `VERSION` on any wire change |
 | "Connected to computer" screen: `show(title, detail, progress)`, `clear()` | `oreoOS/hostui.py` | `cli/oreo_cli/badge.py` and callers | CLI hostui tests; the CLI must keep working on an OS without it |
 | Launcher loading `/remote/apps` for `falera dev` | `oreoOS/launcher.py` | `cli/oreo_cli/commands.py` `dev_notes` | CLI test |
 | Screenshot: `display.current()` returns the newest Display; its `_buf` is the 320x240 frame as big-endian RGB565 | `oreoWare/display.py`; fallback for older FaleraOS: `oreoOS/busy.py` `_display` (bound by `launcher.py`) | `cli/oreo_cli/screenshot.py` (`falera screenshot`) | `tests/test_display_current.py`; CLI contract tests against `display.py` and `busy.py` |

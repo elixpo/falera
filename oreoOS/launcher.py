@@ -389,6 +389,39 @@ def _home_cancels(os_obj, loader):
         return False
 
 
+
+# Touch events: a finger that moves less than this many pixels between two
+# readings is still; it keeps "move" events from firing on reading noise.
+TOUCH_MOVE_PX = 3
+
+
+def touch_step(touch, state):
+    """One reading of the touch screen turned into an event.
+
+    state is a dict the caller keeps between frames ({} at first). Returns
+    ("down" | "move" | "up", x, y) or None. touch.read() samples only while
+    the controller's pen interrupt says the screen is pressed, so this costs
+    a pin read when nobody is touching it."""
+    try:
+        p = touch.read()
+    except Exception:
+        p = None
+    if p is not None:
+        x, y = p
+        if not state.get("down"):
+            state["down"] = True
+            state["x"], state["y"] = x, y
+            return ("down", x, y)
+        if abs(x - state["x"]) >= TOUCH_MOVE_PX or abs(y - state["y"]) >= TOUCH_MOVE_PX:
+            state["x"], state["y"] = x, y
+            return ("move", x, y)
+        return None
+    if state.get("down"):
+        state["down"] = False
+        return ("up", state["x"], state["y"])
+    return None
+
+
 def run_app(os_obj, app, loader=None, opened=None):
     """Run `app` until it quits or launches another.
 
@@ -461,6 +494,20 @@ def run_app(os_obj, app, loader=None, opened=None):
     AUTOREPEAT_BUTTONS = (api.BTN_UP, api.BTN_DOWN, api.BTN_LEFT, api.BTN_RIGHT)
     next_repeat_ms = {b: 0 for b in AUTOREPEAT_BUTTONS}
     last_c_ms = None    # previous C press, for the double-tap panel gesture
+    # The PCB badge's touch screen (oreoWare.touch); None on the breadboard.
+    touch = getattr(os_obj, "touch", None)
+    touch_state = {}
+    # The touch controller shares the display's SPI bus, and reading it
+    # re-initialises the bus; the loader and oreoOS.busy animators write to
+    # the panel from another thread. So touch waits for this run's first
+    # present() (which stops the loader) and for no busy animation.
+    touch_ok = False
+    _busy = None
+    if touch is not None:
+        try:
+            from oreoOS import busy as _busy
+        except Exception:
+            _busy = None
 
     # Timing (oreoOS.perf, read from the REPL) and the background network
     # service (oreoOS.netsvc). Both are optional: a failed import leaves
@@ -473,6 +520,13 @@ def run_app(os_obj, app, loader=None, opened=None):
         from oreoOS import netsvc as _net
     except Exception:
         _net = None
+    # The live link (oreoOS.livelink): `falera` commands answered from the
+    # USB console without stopping FaleraOS. Optional like the two above.
+    try:
+        from oreoOS import livelink as _live
+    except Exception:
+        _live = None
+    live_shown = False      # its strip was drawn on the previous frame
     app_name = getattr(app, "name", "")
     # perf's first-press bound: a press latched at any point of the loop
     # period before this frame is read here, and acts by the end of this
@@ -609,6 +663,21 @@ def run_app(os_obj, app, loader=None, opened=None):
                     else:
                         app.on_button_press(b)
 
+            # ── touch screen (PCB badge) ──────────────────────────
+            # Routed like a button press: the pair prompt and an open
+            # notification panel take precedence, so the app sees nothing
+            # then; a finger landing counts as activity for the idle timer.
+            if touch is not None and touch_ok and not (
+                    _busy is not None and _busy.active()):
+                ev = touch_step(touch, touch_state)
+                if ev is not None:
+                    if ev[0] != "up" and pm:
+                        pm.note_event()
+                    if not (pair_pp.is_active() or panel.is_active()):
+                        hook = getattr(app, "on_touch", None)
+                        if hook is not None:
+                            hook(ev[0], ev[1], ev[2])
+
             # Tick the panel BEFORE the app draws so we can detect the
             # exact frame the close animation finishes and force the app
             # to redraw the area the panel just vacated. Without this the
@@ -656,6 +725,20 @@ def run_app(os_obj, app, loader=None, opened=None):
                     app._present_region = None
                     if panel.is_active() or pair_pp.is_active():
                         region = None
+                # The live link's strip (a computer copying files or
+                # installing apps) sits on top of everything; the frame
+                # after it goes, the app repaints what it covered.
+                if _live is not None:
+                    try:
+                        shown = bool(_live.draw(os_obj.display))
+                    except Exception:
+                        shown = False
+                    if shown:
+                        region = None
+                    elif live_shown:
+                        _invalidate(app)
+                        panel.invalidate()
+                    live_shown = shown
                 # This frame asked for another app: acknowledge the press
                 # on this very frame, before the old app exits and the new
                 # one imports (oreoOS.opening).
@@ -683,6 +766,7 @@ def run_app(os_obj, app, loader=None, opened=None):
                     os_obj.display.present()
                     present_hook(time.ticks_diff(
                         time.ticks_us(), present_start_us))
+                touch_ok = True
                 if opened is not None:
                     # The app's first frame is on the panel (the present
                     # above stopped the loader's animator).
@@ -733,6 +817,18 @@ def run_app(os_obj, app, loader=None, opened=None):
                 realtime = bool(app.realtime_mode())
             except Exception:
                 realtime = False
+
+            # The live link reads the USB console and runs a slice of the
+            # computer's current request (bounded: a few ms of reading, a
+            # few lines of streaming; slow work is on its worker). Right
+            # after present, so a screenshot copies a whole frame. While a
+            # computer is using it the badge does not doze.
+            if _live is not None:
+                try:
+                    if _live.tick(app, realtime) and pm:
+                        pm.note_event()
+                except Exception:
+                    pass
 
             # Idle check AFTER the frame so the user sees the result of their
             # last input before the chip dozes off. PowerManager calls
